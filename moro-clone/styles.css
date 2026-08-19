@@ -20,8 +20,13 @@ h1{margin:0}
 .wrap{max-width:var(--maxw);margin:0 auto;padding:0 var(--pad)}
 
 /* ============ display type ============ */
-.d1{font-family:var(--f-ui);font-size:clamp(30px,9.1vw,168px);line-height:.9;
+.d1{font-family:var(--f-ui);font-size:clamp(26px,7.4vw,132px);line-height:.9;
     font-weight:500;letter-spacing:-.07em}
+/* each line is its own block and never wraps — the break is the design,
+   not a by-product of where the text happens to run out of room */
+.d1 .ln{display:block;white-space:nowrap}
+/* the display tracking is tight enough to collide with the ampersand */
+.d1 .amp{letter-spacing:0;padding:0 .05em}
 
 /* halftone fill — the site's signature effect */
 .dotted{
@@ -52,21 +57,35 @@ h1{margin:0}
   padding-left:8px}
 .links{display:flex;align-items:center;gap:8px}
 
-/* hover: the dark label exits upward while a black pill rises in from below.
-   height is pinned to an integer 30px (22px line + 4px pad) — a fractional box
-   lands the pill's edge mid-device-pixel and antialiases it into a visible seam.
-   the +2px park keeps that edge off the clip boundary entirely. */
-.navlink{position:relative;display:block;overflow:hidden;border-radius:999px;
-  font-family:var(--f-ui);font-size:14px;font-weight:600;letter-spacing:-.01em}
-.navlink span{display:block;height:30px;line-height:22px;padding:4px 12px;
-  white-space:nowrap;transition:transform .42s var(--ease-out)}
-.lbl-rest{color:#09090B}
-.lbl-hover{position:absolute;inset:0;background:#09090B;color:#fff;
-  transform:translateY(calc(100% + 2px))}
-/* focus-visible too, so the pill is the keyboard indicator as well */
-.navlink:hover .lbl-rest,.navlink:focus-visible .lbl-rest{transform:translateY(calc(-100% - 2px))}
-.navlink:hover .lbl-hover,.navlink:focus-visible .lbl-hover{transform:translateY(0)}
-.navlink:focus-visible{outline:none}
+/* hover is a rotating wheel, not a slide. three arms sit at 0 / -18 / -35deg
+   and pivot about the link's right edge, so the labels travel on an arc. the
+   middle arm is a blurred fill that sweeps through as a motion streak, and the
+   settled pill is the link's own background. */
+.navlink{position:relative;display:block;border-radius:100px;
+  font-family:var(--f-ui);font-size:14px;font-weight:600;letter-spacing:-.01em;
+  background:transparent;transition:background .34s var(--ease-out) .06s}
+.navlink:hover,.navlink:focus-visible{background:#09090B;outline:none}
+
+.clip{display:block;position:relative;overflow:hidden;border-radius:100px}
+.sizer{display:block;height:40px;line-height:40px;padding:0 14px;
+  white-space:nowrap;visibility:hidden}   /* in flow purely to size the link */
+
+.wheel{position:absolute;inset:0;transform-origin:100% 50%;
+  transition:transform .62s var(--ease-out)}
+.navlink:hover .wheel,.navlink:focus-visible .wheel{transform:rotate(35deg)}
+
+.arm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  transform-origin:100% 50%;white-space:nowrap;transition:opacity .34s linear}
+.a1{color:#09090B;transition:opacity .2s linear .1s}
+.a2{transform:rotate(-18deg)}
+.a2 i{display:block;width:100%;height:30px;background:#09090B;border-radius:100px;
+  filter:blur(2px);opacity:0;transition:opacity .26s linear .05s}
+.a3{color:#fff;opacity:0;transform:rotate(-35deg) scale(.6);
+  transition:opacity .28s linear .13s,transform .62s var(--ease-out)}
+
+.navlink:hover .a1,.navlink:focus-visible .a1{opacity:0}
+.navlink:hover .a2 i,.navlink:focus-visible .a2 i{opacity:.85}
+.navlink:hover .a3,.navlink:focus-visible .a3{opacity:1;transform:rotate(-35deg) scale(1)}
 
 /* ============ hero ============ */
 /* composition matched to the reference: object centred, top edge ~52vh, running off the fold */
@@ -128,8 +147,7 @@ body.loading .bar{animation-play-state:paused}
   .mark{font-size:16px;padding-left:4px}
   .links{gap:4px}
   .navlink{font-size:12px}
-  /* keep line-height + padding summing to the fixed height, else text overflows */
-  .navlink span{height:26px;line-height:18px;padding:4px 8px}
+  .sizer{height:34px;line-height:34px;padding:0 10px}
   .hero{padding:130px 0 0}
   #hashgl{width:96vw;height:92vh;top:36vh}
   .hash-fallback{top:54vh;height:52vh}
@@ -139,7 +157,7 @@ body.loading .bar{animation-play-state:paused}
   .mark{font-size:15px}
   .links{gap:3px}
   .navlink{font-size:11px}
-  .navlink span{height:24px;line-height:16px;padding:4px 7px}
+  .sizer{height:30px;line-height:30px;padding:0 8px}
 }
 /* at 320px the wordmark and four labels cannot coexist — links win, brand
    still reads in the hero headline just below */
