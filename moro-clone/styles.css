@@ -37,25 +37,36 @@ h1{margin:0}
   .dotted{color:var(--line-2);-webkit-text-fill-color:var(--line-2)}
 }
 
-/* ============ nav ============ */
-.nav{position:fixed;inset:0 0 auto 0;z-index:100;pointer-events:none}
-.nav-in{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
-  padding:22px var(--pad);pointer-events:auto}
-.nav-l,.nav-r{display:flex;gap:26px;align-items:center}
-.nav-r{justify-content:flex-end;padding-right:130px}
-.mark{font-family:var(--f-ui);font-weight:700;font-size:26px;letter-spacing:-.05em;text-align:center}
-.navlink{font-family:var(--f-ui);font-size:14px;font-weight:500;letter-spacing:-.01em}
+/* ============ nav — floating pill ============ */
+.nav{position:fixed;top:8px;left:0;right:0;z-index:100;
+  display:flex;justify-content:center;pointer-events:none}
+.bar{
+  display:flex;align-items:center;justify-content:space-between;
+  width:min(600px,calc(100vw - 32px));height:52px;
+  padding:8px 28px 8px 14px;border-radius:16px;
+  background:rgba(237,237,240,.82);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  pointer-events:auto;
+}
+.mark{font-family:var(--f-ui);font-weight:700;font-size:20px;letter-spacing:-.05em;
+  padding-left:8px}
+.links{display:flex;align-items:center;gap:8px}
 
-/* dual-text vertical slide (source: two stacked <p> in a 22px flex-column) */
-.slide{display:block;height:1.38em;overflow:hidden;position:relative}
-.slide span{display:block;transition:transform .42s var(--ease-out)}
-.slide span+span{color:var(--muted)}
-.slide:hover span{transform:translateY(-100%)}
-
-.contact{position:fixed;top:0;right:0;z-index:101;background:var(--accent);color:var(--ink);
-  font-family:var(--f-ui);font-size:14px;font-weight:500;padding:26px 30px;
-  transition:background .25s cubic-bezier(.4,0,.2,1)}
-.contact:hover{background:#00E4EC}
+/* hover: the dark label exits upward while a black pill rises in from below.
+   height is pinned to an integer 30px (22px line + 4px pad) — a fractional box
+   lands the pill's edge mid-device-pixel and antialiases it into a visible seam.
+   the +2px park keeps that edge off the clip boundary entirely. */
+.navlink{position:relative;display:block;overflow:hidden;border-radius:999px;
+  font-family:var(--f-ui);font-size:14px;font-weight:600;letter-spacing:-.01em}
+.navlink span{display:block;height:30px;line-height:22px;padding:4px 12px;
+  white-space:nowrap;transition:transform .42s var(--ease-out)}
+.lbl-rest{color:#09090B}
+.lbl-hover{position:absolute;inset:0;background:#09090B;color:#fff;
+  transform:translateY(calc(100% + 2px))}
+/* focus-visible too, so the pill is the keyboard indicator as well */
+.navlink:hover .lbl-rest,.navlink:focus-visible .lbl-rest{transform:translateY(calc(-100% - 2px))}
+.navlink:hover .lbl-hover,.navlink:focus-visible .lbl-hover{transform:translateY(0)}
+.navlink:focus-visible{outline:none}
 
 /* ============ hero ============ */
 /* composition matched to the reference: object centred, top edge ~52vh, running off the fold */
@@ -79,17 +90,62 @@ h1{margin:0}
 }
 #hashgl.gl-on ~ .hash-fallback{display:none}
 
+/* ============ intro loader ============ */
+body.loading{overflow:hidden}
+.loader{position:fixed;inset:0;z-index:900;background:#fff;color:var(--ink);
+  display:grid;place-items:center;
+  transition:opacity .65s var(--ease-out),transform .65s var(--ease-out);
+  /* failsafe: if the script never runs, the page must not stay covered */
+  animation:ldFailsafe 0s linear 8s forwards}
+@keyframes ldFailsafe{to{opacity:0;visibility:hidden;pointer-events:none}}
+.loader.done{opacity:0;transform:scale(1.03);pointer-events:none}
+.loader[hidden]{display:none}          /* display:grid would beat the hidden attribute */
+
+.ld-dot{width:7px;height:7px;border-radius:50%;background:var(--ink);flex:none}
+.ld-mid{display:flex;align-items:center;gap:30px;position:relative;z-index:1}
+.ld-word{font-family:var(--f-ui);font-weight:400;letter-spacing:-.035em;line-height:1;
+  font-size:clamp(38px,6.4vw,86px)}
+.ld-word.swap{animation:ldWordIn .5s var(--ease-out) both}
+@keyframes ldWordIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+.ld-pct{position:absolute;right:var(--pad);bottom:20px;z-index:1;
+  display:flex;align-items:flex-end;
+  font-family:var(--f-ui);font-weight:400;letter-spacing:-.045em;line-height:.82}
+#ldNum{font-size:clamp(54px,9vw,124px);font-variant-numeric:tabular-nums}
+.ld-sym{font-size:clamp(15px,1.9vw,26px);color:var(--ink);margin:0 0 .6em 3px}
+
+/* hold the hero + nav entrance until the loader clears */
+body.loading .hero .d1,
+body.loading #hashgl,
+body.loading .hash-fallback,
+body.loading .bar{animation-play-state:paused}
+
 /* ============ responsive ============ */
-@media (max-width:1080px){ :root{--pad:28px} .nav-r{padding-right:118px} }
+@media (max-width:1080px){ :root{--pad:28px} }
 @media (max-width:720px){
   :root{--pad:20px}
-  .nav-l,.nav-r{display:none}
-  .nav-in{grid-template-columns:1fr}
-  .mark{text-align:left}
-  .contact{padding:20px 22px}
+  .bar{width:calc(100vw - 20px);height:46px;padding:5px 10px 5px 8px}
+  .mark{font-size:16px;padding-left:4px}
+  .links{gap:4px}
+  .navlink{font-size:12px}
+  /* keep line-height + padding summing to the fixed height, else text overflows */
+  .navlink span{height:26px;line-height:18px;padding:4px 8px}
   .hero{padding:130px 0 0}
   #hashgl{width:96vw;height:92vh;top:36vh}
   .hash-fallback{top:54vh;height:52vh}
+}
+/* below ~380px "Playground." no longer clears the wordmark — tighten once more */
+@media (max-width:380px){
+  .mark{font-size:15px}
+  .links{gap:3px}
+  .navlink{font-size:11px}
+  .navlink span{height:24px;line-height:16px;padding:4px 7px}
+}
+/* at 320px the wordmark and four labels cannot coexist — links win, brand
+   still reads in the hero headline just below */
+@media (max-width:340px){
+  .mark{display:none}
+  .bar{justify-content:center}
 }
 @media (prefers-reduced-motion:reduce){
   *{animation-duration:.01ms!important;animation-iteration-count:1!important;
@@ -103,8 +159,8 @@ h1{margin:0}
                    to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
 .hero .d1{animation:riseIn 1.05s cubic-bezier(.16,1,.3,1) both}
 #hashgl,.hash-fallback{animation:glassIn 1.35s cubic-bezier(.16,1,.3,1) .12s both}
-.nav-in,.contact{animation:riseIn .8s cubic-bezier(.16,1,.3,1) both}
+.bar{animation:riseIn .8s cubic-bezier(.16,1,.3,1) both}
 @media (prefers-reduced-motion:reduce){
-  .hero .d1,#hashgl,.hash-fallback,.nav-in,.contact{animation:none!important;opacity:1!important}
+  .hero .d1,#hashgl,.hash-fallback,.bar{animation:none!important;opacity:1!important}
   #hashgl,.hash-fallback{transform:translateX(-50%)!important}
 }
