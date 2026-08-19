@@ -12,13 +12,17 @@
 <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <meta name="theme-color" content="#1E90FF">
-<link rel="stylesheet" href="styles.css?v=26">
+<link rel="stylesheet" href="styles.css?v=45">
 </head>
 <body class="loading">
 
 <div class="loader" id="loader" role="status" aria-label="Loading">
   <div class="ld-mid">
-    <span class="ld-dot"></span>
+    <svg class="ld-ast" viewBox="0 0 24 24" aria-hidden="true">
+      <g stroke="currentColor" stroke-width="3.2" stroke-linecap="round">
+        <path d="M12 2.5V21.5"/><path d="M3.77 7.25 20.23 16.75"/><path d="M3.77 16.75 20.23 7.25"/>
+      </g>
+    </svg>
     <span class="ld-word swap" id="ldWord">Hello</span>
   </div>
   <div class="ld-pct"><span id="ldNum">0</span><span class="ld-sym">%</span></div>
@@ -28,10 +32,10 @@
   <div class="bar">
     <a class="mark" href="#top">himalay.</a>
     <div class="links">
-        <a class="navlink" href="#top"><span class="clip"><span class="sizer">Work.</span><span class="wheel"><span class="arm a1">Work.</span><span class="arm a2"><i></i></span><span class="arm a3">Work.</span></span></span></a>
-        <a class="navlink" href="#top"><span class="clip"><span class="sizer">Playground.</span><span class="wheel"><span class="arm a1">Playground.</span><span class="arm a2"><i></i></span><span class="arm a3">Playground.</span></span></span></a>
-        <a class="navlink" href="#top"><span class="clip"><span class="sizer">About.</span><span class="wheel"><span class="arm a1">About.</span><span class="arm a2"><i></i></span><span class="arm a3">About.</span></span></span></a>
-        <a class="navlink" href="#top"><span class="clip"><span class="sizer">Resume.</span><span class="wheel"><span class="arm a1">Resume.</span><span class="arm a2"><i></i></span><span class="arm a3">Resume.</span></span></span></a>
+        <a class="navlink" href="#top"><span class="clip"><span class="sizer">Work.</span><span class="arm a1">Work.</span><span class="arm a2"><i></i></span><span class="dots" aria-hidden="true"></span><span class="arm a3"><i>Work.</i></span></span></a>
+        <a class="navlink" href="#top"><span class="clip"><span class="sizer">Playground.</span><span class="arm a1">Playground.</span><span class="arm a2"><i></i></span><span class="dots" aria-hidden="true"></span><span class="arm a3"><i>Playground.</i></span></span></a>
+        <a class="navlink" href="#top"><span class="clip"><span class="sizer">About.</span><span class="arm a1">About.</span><span class="arm a2"><i></i></span><span class="dots" aria-hidden="true"></span><span class="arm a3"><i>About.</i></span></span></a>
+        <a class="navlink" href="#top"><span class="clip"><span class="sizer">Resume.</span><span class="arm a1">Resume.</span><span class="arm a2"><i></i></span><span class="dots" aria-hidden="true"></span><span class="arm a3"><i>Resume.</i></span></span></a>
     </div>
   </div>
 </nav>
@@ -51,8 +55,10 @@
 </main>
 
 <script src="loader.js?v=1"></script>
-<script src="tab.js?v=1"></script>
+<script src="tab.js?v=6"></script>
 <script src="hash-gl.js?v=16"></script>
+<script src="dots-gl.js?v=2"></script>
+<script src="hero-dots.js?v=3"></script>
 <script src="app.js?v=7"></script>
 </body>
 </html>

@@ -5,6 +5,7 @@
   --f-ui:"Instrument Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   --f-body:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   --ease-out:cubic-bezier(.16,1,.3,1);
+  --spring:cubic-bezier(.34,1.4,.5,1);
   --pad:40px; --maxw:1360px;
 }
 *,*::before,*::after{box-sizing:border-box}
@@ -31,16 +32,55 @@ h1{margin:0}
 /* halftone fill — the site's signature effect */
 .dotted{
   --dot:#131316;
-  background-image:radial-gradient(var(--dot) 1.05px, transparent 1.15px);
-  background-size:4px 4px;
+  /* the reference screens at 3px, but its type is 168px against our 107px, so
+     matching that grid clogs the glyphs. 3.5px keeps the gaps open at our size.
+     drift below must stay a whole multiple of the pitch to loop seamlessly. */
+  background-image:radial-gradient(var(--dot) .9px, transparent 1.05px);
+  background-size:3.5px 3.5px;
   -webkit-background-clip:text;background-clip:text;
   color:transparent;-webkit-text-fill-color:transparent;
   animation:dotdrift 24s linear infinite;
 }
-@keyframes dotdrift{to{background-position:120px 60px}}
+@keyframes dotdrift{to{background-position:119px 63px}}
 @supports not ((-webkit-background-clip:text) or (background-clip:text)){
   .dotted{color:var(--line-2);-webkit-text-fill-color:var(--line-2)}
 }
+
+/* ---- headline colour wave (hero-dots.js) ----
+   two exact copies of the h1 stack over it: the colour flood and, above it, a
+   denser ring that leads the front. both are revealed by a radial mask growing
+   from the hovered letter's centre and clipped to that letter's column, so the
+   wave stays inside one glyph the way the reference keeps it inside one tile.
+   the copies share the h1's box, so their dot grids sit exactly on its own —
+   were the .dotted drift ever to run (today .hero .d1's riseIn overrides it)
+   these would need the same animation or the grids would double up. */
+@property --r{syntax:"<length>";inherits:true;initial-value:0px}
+.d1{transition-property:--r;transition-timing-function:linear;transition-duration:0ms}
+.d1.nowave{transition:none}          /* so the wave can be snapped back to 0 */
+
+.d1hot{position:absolute;inset:0;pointer-events:none;
+  -webkit-user-select:none;user-select:none;   /* a copy of the headline must never be selectable */
+  --dot:var(--hot,#1E90FF);
+  background-image:radial-gradient(var(--dot) .9px,transparent 1.05px);
+  background-size:3.5px 3.5px;
+  -webkit-background-clip:text;background-clip:text;
+  color:transparent;-webkit-text-fill-color:transparent;
+  opacity:0;transition:opacity .26s var(--ease-out);
+  -webkit-mask-image:radial-gradient(circle at var(--cx,50%) var(--cy,50%),
+    #000 0 var(--r),rgba(0,0,0,0) calc(var(--r) + 9px));
+  mask-image:radial-gradient(circle at var(--cx,50%) var(--cy,50%),
+    #000 0 var(--r),rgba(0,0,0,0) calc(var(--r) + 9px))}
+.d1hot.on{opacity:1}
+
+/* the crest. the reference brightens its wavefront because it sits on black —
+   on our paper the same job is done by going darker, not lighter. */
+.d1hot.crest{--dot:color-mix(in oklab,var(--hot,#1E90FF) 72%,#000);
+  -webkit-mask-image:radial-gradient(circle at var(--cx,50%) var(--cy,50%),
+    rgba(0,0,0,0) 0 calc(var(--r) - 34px),#000 calc(var(--r) - 22px),
+    #000 calc(var(--r) - 4px),rgba(0,0,0,0) var(--r));
+  mask-image:radial-gradient(circle at var(--cx,50%) var(--cy,50%),
+    rgba(0,0,0,0) 0 calc(var(--r) - 34px),#000 calc(var(--r) - 22px),
+    #000 calc(var(--r) - 4px),rgba(0,0,0,0) var(--r))}
 
 /* ============ nav — floating pill ============ */
 .nav{position:fixed;top:8px;left:0;right:0;z-index:100;
@@ -48,7 +88,7 @@ h1{margin:0}
 .bar{
   display:flex;align-items:center;justify-content:space-between;
   width:min(600px,calc(100vw - 32px));height:52px;
-  padding:8px 28px 8px 14px;border-radius:16px;
+  padding:8px 28px 8px 14px;border-radius:16px;border:1.5px solid #fff;
   background:rgba(237,237,240,.82);
   -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
   pointer-events:auto;
@@ -57,35 +97,59 @@ h1{margin:0}
   padding-left:8px}
 .links{display:flex;align-items:center;gap:8px}
 
-/* hover is a rotating wheel, not a slide. three arms sit at 0 / -18 / -35deg
-   and pivot about the link's right edge, so the labels travel on an arc. the
-   middle arm is a blurred fill that sweeps through as a motion streak, and the
-   settled pill is the link's own background. */
-.navlink{position:relative;display:block;border-radius:100px;
-  font-family:var(--f-ui);font-size:14px;font-weight:600;letter-spacing:-.01em;
-  background:transparent;transition:background .34s var(--ease-out) .06s}
-.navlink:hover,.navlink:focus-visible{background:#09090B;outline:none}
+/* hover, measured frame-by-frame off the reference: three arms pivot about the
+   link's right edge and all converge on 0deg, each travelling a different
+   distance (18 vs 35), which is what staggers the fill ahead of the label.
+   the dark label never fades - it leaves purely by rotating to 25deg. the
+   black pill is arm 2's fill arriving and staying; the link has no background.
+   (the reference blurs that fill 2px as a motion streak - dropped by choice.)
+   the reference springs, overshooting ~10% before settling. */
+.navlink{position:relative;display:block;
+  font-family:var(--f-ui);font-size:14px;font-weight:600;letter-spacing:-.01em}
+.navlink:focus-visible{outline:none}
 
 .clip{display:block;position:relative;overflow:hidden;border-radius:100px}
 .sizer{display:block;height:40px;line-height:40px;padding:0 14px;
   white-space:nowrap;visibility:hidden}   /* in flow purely to size the link */
 
-.wheel{position:absolute;inset:0;transform-origin:100% 50%;
-  transition:transform .62s var(--ease-out)}
-.navlink:hover .wheel,.navlink:focus-visible .wheel{transform:rotate(35deg)}
-
 .arm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  transform-origin:100% 50%;white-space:nowrap;transition:opacity .34s linear}
-.a1{color:#09090B;transition:opacity .2s linear .1s}
+  transform-origin:100% 50%;white-space:nowrap;
+  transition:transform .42s var(--spring)}
+/* the reference holds this at opacity 1 and lets the window clip it, but at
+   our link widths a remnant still shows, so it fades once the pill covers it */
+.a1{color:#09090B;transition:transform .42s var(--spring),opacity .1s linear .16s}
 .a2{transform:rotate(-18deg)}
 .a2 i{display:block;width:100%;height:30px;background:#09090B;border-radius:100px;
-  filter:blur(2px);opacity:0;transition:opacity .26s linear .05s}
-.a3{color:#fff;opacity:0;transform:rotate(-35deg) scale(.6);
-  transition:opacity .28s linear .13s,transform .62s var(--ease-out)}
+  opacity:0;transition:opacity .15s linear}
+.a3{transform:rotate(-35deg);color:#fff}
+.a3 i{display:block;font-style:normal;opacity:0;transform:scale(.6);
+  transition:opacity .17s linear .04s,transform .42s var(--spring)}
 
-.navlink:hover .a1,.navlink:focus-visible .a1{opacity:0}
-.navlink:hover .a2 i,.navlink:focus-visible .a2 i{opacity:.85}
-.navlink:hover .a3,.navlink:focus-visible .a3{opacity:1;transform:rotate(-35deg) scale(1)}
+.navlink:hover .a1,.navlink:focus-visible .a1{transform:rotate(25deg);opacity:0}
+.navlink:hover .a2,.navlink:focus-visible .a2{transform:rotate(0deg)}
+.navlink:hover .a2 i,.navlink:focus-visible .a2 i{opacity:1}
+.navlink:hover .a3,.navlink:focus-visible .a3{transform:rotate(0deg)}
+.navlink:hover .a3 i,.navlink:focus-visible .a3 i{opacity:1;transform:scale(1)}
+
+/* the dot-field. sits over arm 2's black pill and under arm 3's white label, so
+   the pixels read as the pill's own surface rather than a layer on top of it.
+   inset 2px like the reference, and clipped to the pill's radius — nothing must
+   land on the light bar outside it. the canvas is created and driven by
+   dots-gl.js; at rest there is no canvas here at all. */
+.dots{position:absolute;left:2px;right:2px;top:50%;height:26px;margin-top:-13px;
+  border-radius:100px;overflow:hidden;pointer-events:none;
+  opacity:0;transition:opacity .22s linear}
+.dots.on{opacity:1}
+/* the reference dims the middle of each tile so its logo still reads through
+   the field — same job here, except the label fills far more of the pill than
+   a logo does, so the falloff has to be wider and softer than their 42.89%. */
+.dots::after{content:"";position:absolute;inset:0;
+  background:radial-gradient(58% 62% at 50% 50%,rgba(9,9,11,.9) 10%,rgba(9,9,11,0) 100%)}
+/* the wave arrives from the pill's centre, which is already black by the time
+   the front reaches the edges — the delay keeps the first dots off arm 2 while
+   it is still swinging in at -18deg */
+.navlink:hover .dots,.navlink:focus-visible .dots{transition-delay:.06s}
+.dots canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 
 /* ============ hero ============ */
 /* composition matched to the reference: object centred, top edge ~52vh, running off the fold */
@@ -120,7 +184,12 @@ body.loading{overflow:hidden}
 .loader.done{opacity:0;transform:scale(1.03);pointer-events:none}
 .loader[hidden]{display:none}          /* display:grid would beat the hidden attribute */
 
-.ld-dot{width:7px;height:7px;border-radius:50%;background:var(--ink);flex:none}
+/* six spokes on a 19px radius in a 24 grid — the vertical arm makes it read
+   as an asterisk rather than a snowflake. sized off the greeting so the
+   pairing holds at every width, but well under it: this is a mark beside the
+   word, not a second word. */
+.ld-ast{width:clamp(15px,2.4vw,34px);height:clamp(15px,2.4vw,34px);
+  flex:none;color:var(--ink);fill:none;overflow:visible}
 .ld-mid{display:flex;align-items:center;gap:30px;position:relative;z-index:1}
 .ld-word{font-family:var(--f-ui);font-weight:400;letter-spacing:-.035em;line-height:1;
   font-size:clamp(38px,6.4vw,86px)}
