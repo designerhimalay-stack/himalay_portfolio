@@ -12,6 +12,10 @@
   var FS = [
 'precision highp float;',
 'uniform vec2 R;uniform float T;uniform vec2 M;uniform float FIT;',
+// arrival choreography (hero-intro.js drives these; 1.0 / 0.0 is the rest pose).
+// ZOOM is a focal-length change, not a scale: apparent size is exactly linear in
+// FIT, so ZOOM 2.6 renders the hash 2.6x with the perspective a longer lens gives.
+'uniform float SPIN;uniform float ZOOM;',
 
 // ---- true dimensions, normalised so height = 1.0 (146 mm) ----
 'const float S=1.0/146.0;',
@@ -64,8 +68,8 @@
 
 'void main(){',
 '  vec2 uv=(gl_FragCoord.xy-0.5*R)/R.y;',
-'  vec3 ro=vec3(0.,0.,4.2), rd=normalize(vec3(uv,-FIT));',
-'  float yaw=0.34+M.x*0.78+sin(T*0.20)*0.10;',
+'  vec3 ro=vec3(0.,0.,4.2), rd=normalize(vec3(uv,-FIT*ZOOM));',
+'  float yaw=0.34+M.x*0.78+sin(T*0.20)*0.10+SPIN;',
 '  float pit=-0.04-M.y*0.34+sin(T*0.155)*0.045;',   // -M.y: screen-up cursor tips the face up
 '  mat3 inv=rotX(-pit)*rotY(-yaw);',
 '  vec3 rol=inv*ro, rdl=inv*rd;',
@@ -133,13 +137,25 @@
   gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 
   var uR = gl.getUniformLocation(pr,'R'), uT = gl.getUniformLocation(pr,'T'),
-      uM = gl.getUniformLocation(pr,'M'), uF = gl.getUniformLocation(pr,'FIT');
+      uM = gl.getUniformLocation(pr,'M'), uF = gl.getUniformLocation(pr,'FIT'),
+      uS = gl.getUniformLocation(pr,'SPIN'), uZ = gl.getUniformLocation(pr,'ZOOM');
 
   // load pose, held until the cursor moves: 70% right, 15% up of the full look range
   var REST_X=0.70, REST_Y=-0.15;
   var mx=REST_X,my=REST_Y,tx=REST_X,ty=REST_Y;
   // the hash holds its load pose until the cursor actually moves
   var active=false, needsDraw=true, t0=0;
+
+  // ---- arrival choreography ----
+  // hero-intro.js owns every timing; this file only renders the pose it is handed.
+  // during the intro the canvas is full-width, so the pixel count roughly doubles —
+  // the dpr cap comes down to pay for it and goes back up once the hash is still.
+  var spin=0, zoom=1, intro=false, dprCap=1.75;
+  window.HashGL = {
+    start: function(){ intro=true; dprCap=1.15; needsDraw=true; },
+    set: function(z, s){ zoom=z; spin=s; },
+    done: function(){ intro=false; dprCap=1.75; spin=0; zoom=1; needsDraw=true; }
+  };
   function wake(){
     if (active) return;
     active = true;
@@ -157,7 +173,7 @@
   addEventListener('blur', function(){ tx = 0; ty = 0; });
 
   function size(){
-    var dpr = Math.min(devicePixelRatio||1, 1.75);       // cap: raymarching is fill-rate bound
+    var dpr = Math.min(devicePixelRatio||1, dprCap);     // cap: raymarching is fill-rate bound
     var w=cv.clientWidth, h=cv.clientHeight;
     if (cv.width !== (w*dpr|0) || cv.height !== (h*dpr|0)) {
       cv.width=w*dpr|0; cv.height=h*dpr|0; gl.viewport(0,0,cv.width,cv.height);
@@ -179,13 +195,15 @@
     gl.uniform2f(uM, mx, my);
     // wider canvases need a longer lens so the hash keeps its size
     gl.uniform1f(uF, 2.55);
+    gl.uniform1f(uS, spin);
+    gl.uniform1f(uZ, zoom);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
   function frame(now){
     if (running) {
       var resized = size();
       // before the first cursor move: one static frame, redrawn only on resize
-      if (active || needsDraw || resized) { needsDraw = false; draw(now); }
+      if (intro || active || needsDraw || resized) { needsDraw = false; draw(now); }
     }
     requestAnimationFrame(frame);
   }

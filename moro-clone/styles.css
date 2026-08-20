@@ -30,20 +30,27 @@ h1{margin:0}
 .d1 .amp{letter-spacing:0;padding:0 .05em}
 
 /* halftone fill — the site's signature effect */
-.dotted{
-  --dot:#131316;
+/* the halftone lives on the element that carries the text, not on the h1.
+   background-clip:text does not survive a transformed descendant — once the
+   arrival puts translate3d on .ln-i the clip is computed in a separate layer and
+   the dots wash out. Painting it on .ln-i keeps the clip and the glyphs in one
+   paint context, and the dots then travel with the line as it comes up behind
+   its mask, which is what a printed line should do.
+   .d1 .ln-i catches the hover clones too; --dot resolves per context. */
+.dotted{--dot:#131316}
+.d1 .ln-i{
   /* the reference screens at 3px, but its type is 168px against our 107px, so
-     matching that grid clogs the glyphs. 3.5px keeps the gaps open at our size.
-     drift below must stay a whole multiple of the pitch to loop seamlessly. */
+     matching that grid clogs the glyphs. 3.5px keeps the gaps open at our size. */
   background-image:radial-gradient(var(--dot) .9px, transparent 1.05px);
   background-size:3.5px 3.5px;
   -webkit-background-clip:text;background-clip:text;
   color:transparent;-webkit-text-fill-color:transparent;
-  animation:dotdrift 24s linear infinite;
 }
-@keyframes dotdrift{to{background-position:119px 63px}}
+/* the old dotdrift was dead code — .hero .d1's riseIn outranked it, so it never
+   ran once. Reviving it now would need the same animation, in phase, on both the
+   base lines and hero-dots.js's clones, or the two grids double up. Left off. */
 @supports not ((-webkit-background-clip:text) or (background-clip:text)){
-  .dotted{color:var(--line-2);-webkit-text-fill-color:var(--line-2)}
+  .d1 .ln-i{color:var(--line-2);-webkit-text-fill-color:var(--line-2)}
 }
 
 /* ---- headline colour wave (hero-dots.js) ----
@@ -60,11 +67,7 @@ h1{margin:0}
 
 .d1hot{position:absolute;inset:0;pointer-events:none;
   -webkit-user-select:none;user-select:none;   /* a copy of the headline must never be selectable */
-  --dot:var(--hot,#1E90FF);
-  background-image:radial-gradient(var(--dot) .9px,transparent 1.05px);
-  background-size:3.5px 3.5px;
-  -webkit-background-clip:text;background-clip:text;
-  color:transparent;-webkit-text-fill-color:transparent;
+  --dot:var(--hot,#1E90FF);                    /* .d1 .ln-i paints it; this only sets the ink */
   opacity:0;transition:opacity .26s var(--ease-out);
   -webkit-mask-image:radial-gradient(circle at var(--cx,50%) var(--cy,50%),
     #000 0 var(--r),rgba(0,0,0,0) calc(var(--r) + 9px));
@@ -202,11 +205,8 @@ body.loading{overflow:hidden}
 #ldNum{font-size:clamp(54px,9vw,124px);font-variant-numeric:tabular-nums}
 .ld-sym{font-size:clamp(15px,1.9vw,26px);color:var(--ink);margin:0 0 .6em 3px}
 
-/* hold the hero + nav entrance until the loader clears */
-body.loading .hero .d1,
-body.loading #hashgl,
-body.loading .hash-fallback,
-body.loading .bar{animation-play-state:paused}
+/* the hero holds itself closed via html.js (see arrival choreography) — nothing
+   here may depend on loader.js running, or a failed script ships a blank hero */
 
 /* ============ responsive ============ */
 @media (max-width:1080px){ :root{--pad:28px} }
@@ -240,14 +240,62 @@ body.loading .bar{animation-play-state:paused}
 }
 
 
-/* ============ entrance ============ */
-@keyframes riseIn{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
-@keyframes glassIn{from{opacity:0;transform:translateX(-50%) translateY(38px) scale(.96)}
-                   to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
-.hero .d1{animation:riseIn 1.05s cubic-bezier(.16,1,.3,1) both}
-#hashgl,.hash-fallback{animation:glassIn 1.35s cubic-bezier(.16,1,.3,1) .12s both}
-.bar{animation:riseIn .8s cubic-bezier(.16,1,.3,1) both}
+/* ============ arrival choreography (hero-intro.js) ============
+   Motion §0: the base state IS the finished state. Every closed state below is
+   behind `html.js`, so no-JS — and a script that throws — still render a complete
+   hero. The old build held the hero at opacity 0 behind `body.loading` and only
+   loader.js could release it; one failed script left the page permanently blank.
+   Timings live in hero-intro.js, not here: a CSS delay would be a second clock. */
+
+/* the headline reads line by line behind a curtain, not as a fade (Motion §1).
+   The mask is a clip, not padding plus a negative margin. Padding needs that
+   margin to cancel it, and a negative margin on a first child collapses inside
+   .d1's normal flow but NOT inside .d1hot, which is absolutely positioned and so
+   a formatting context of its own — the hover clone landed 10.66px above the
+   real line and the headline rendered doubled. The same divergence pulled the
+   mask box below the ascenders and sheared 7.4px off the top of every one.
+   clip-path has no layout footprint, so both layers lay out identically and the
+   negative insets let the ink overflow the line box instead of being cut.
+   Only the real lines close — .d1 > .ln never matches the clones. */
+.ln-i{display:block;transition:transform .9s cubic-bezier(.16,1,.3,1)}
+html.js .d1 > .ln{clip-path:inset(-.22em 0 -.30em 0)}
+/* 145%, not Motion's 110%: the travel has to clear the line box AND the .30em
+   the clip lets through below it, or a sliver of the closed line shows. */
+html.js .d1 > .ln > .ln-i{transform:translate3d(0,145%,0)}
+html.js .d1 > .ln.is-in > .ln-i{transform:none}
+
+.bar{transition:opacity .6s cubic-bezier(.16,1,.3,1),transform .6s cubic-bezier(.16,1,.3,1)}
+html.js .bar{opacity:0;transform:translateY(26px)}
+html.js .bar.is-in{opacity:1;transform:none}
+
+/* the hash needs the whole viewport while it is oversized, or it is sliced down
+   both sides by its resting 620px box. uv is normalised by R.y and centred, so it
+   renders at an identical on-screen size and place in either width — the swap back
+   is invisible once the hash is small enough to fit. */
+html.intro #hashgl{width:100vw;left:0;transform:none}
+
 @media (prefers-reduced-motion:reduce){
-  .hero .d1,#hashgl,.hash-fallback,.bar{animation:none!important;opacity:1!important}
-  #hashgl,.hash-fallback{transform:translateX(-50%)!important}
+  html.js .d1 > .ln{clip-path:none}
+  html.js .d1 > .ln > .ln-i{transform:none}
+  html.js .bar{opacity:1;transform:none}
+}
+
+
+/* ============ the glyph set ============
+   one canvas for the whole row — five raymarchers would be five contexts and five
+   full passes; the shader splits screen space into cells instead, so the row costs
+   about what a single glyph would. See glyph-gl.js. */
+.set{position:relative;padding:140px 0 160px;background:var(--bg)}
+.set-lbl{margin:0 0 14px;font-family:var(--f-ui);font-size:13px;font-weight:600;
+  letter-spacing:.02em;color:var(--muted)}
+.set-h{margin:0;font-family:var(--f-ui);font-weight:500;letter-spacing:-.04em;
+  font-size:clamp(28px,4.4vw,60px);line-height:1.02;max-width:16ch}
+.set-row{margin-top:72px;width:100%}
+#glyphgl{display:block;width:100%;height:clamp(150px,17vw,240px);background:transparent}
+#glyphgl.gl-fail{display:none}
+@media (max-width:720px){
+  .set{padding:96px 0 110px}
+  .set-row{margin-top:48px}
+  /* two over two — the canvas has to carry two cell rows */
+  #glyphgl{height:240px}
 }

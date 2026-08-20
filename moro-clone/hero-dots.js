@@ -129,6 +129,9 @@
 
   measure();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+  /* the arrival holds each line translated behind its mask, so anything measured
+     before it settles is measured against the closed position */
+  window.addEventListener('hero:settled', measure);
   var t = 0;
   window.addEventListener('resize', function () {
     clearTimeout(t);

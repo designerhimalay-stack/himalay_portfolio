@@ -15,6 +15,18 @@
   function finish() {
     el.classList.add('done');
     body.classList.remove('loading');
+    // t=0 for the hero timeline is the START of the curtain dissolve, not the end:
+    // the hash must already be large and turning by the time it is visible.
+    // race the webfont rather than wait on it (Motion §4) — the headline mask
+    // measures wrong against a fallback face, but a slow font must not hold the
+    // curtain up either.
+    if (window.heroIntro) {
+      var go = window.heroIntro, ran = false;
+      var once = function () { if (!ran) { ran = true; go(); } };
+      setTimeout(once, 400);
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(once);
+      else once();
+    }
     // drop it from the a11y tree and the paint path once it has faded
     setTimeout(function () { el.setAttribute('hidden', ''); }, 700);
   }

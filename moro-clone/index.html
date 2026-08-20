@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script>document.documentElement.className+=" js"</script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>himalay. — UI/UX designer</title>
 <meta name="description" content="UI/UX designer building interfaces and experiences with staying power. Product design, design systems and prototyping for teams that sweat the details.">
@@ -12,7 +13,7 @@
 <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <meta name="theme-color" content="#1E90FF">
-<link rel="stylesheet" href="styles.css?v=45">
+<link rel="stylesheet" href="styles.css?v=51">
 </head>
 <body class="loading">
 
@@ -43,7 +44,7 @@
 <main id="top">
   <section class="hero">
     <div class="wrap">
-      <h1 class="d1 dotted"><span class="ln">designing products <span class="amp">&amp;</span></span><span class="ln">human experience.</span></h1>
+      <h1 class="d1 dotted"><span class="ln"><span class="ln-i">designing products <span class="amp">&amp;</span></span></span><span class="ln"><span class="ln-i">human experience.</span></span></h1>
     </div>
 
     <div class="stage">
@@ -52,13 +53,25 @@
       <img class="hash-fallback" src="assets/img/hash-clean.png" alt="Glass hash symbol" width="660" height="820">
     </div>
   </section>
+
+  <section class="set" id="set">
+    <div class="wrap">
+      <p class="set-lbl">The set</p>
+      <h2 class="set-h">Same glass, four more marks.</h2>
+    </div>
+    <div class="set-row">
+      <canvas id="glyphgl" aria-label="Glass dollar, percent, ampersand and asterisk"></canvas>
+    </div>
+  </section>
 </main>
 
-<script src="loader.js?v=1"></script>
+<script src="loader.js?v=2"></script>
 <script src="tab.js?v=6"></script>
-<script src="hash-gl.js?v=16"></script>
+<script src="hash-gl.js?v=17"></script>
 <script src="dots-gl.js?v=2"></script>
-<script src="hero-dots.js?v=3"></script>
+<script src="glyph-gl.js?v=17"></script>
+<script src="hero-intro.js?v=1"></script>
+<script src="hero-dots.js?v=4"></script>
 <script src="app.js?v=7"></script>
 </body>
 </html>
