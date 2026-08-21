@@ -1,0 +1,44 @@
+---
+/* Text on a path — the sentence surfaces word by word along a curve that is
+   never drawn.
+
+   Cloned from annnimate.com/animations/text-on-path. Their page is a shell; the
+   live preview runs in an iframe (/api/sandbox/iframe/text-on-path) that ships
+   the working component, so the geometry here is the measured original and not
+   an impression of it — the curve, the 1600x900 design space, the radial
+   offsets, the curvature correction, the 0.6s blur bloom. The full extraction is
+   in docs/research/components/text-on-path.spec.md.
+
+   What is deliberately not theirs: the runtime. The original drives this with
+   GSAP + ScrollTrigger; text-on-path.js does the same work on a plain rAF loop,
+   because nothing else on this site ships an animation library and one section
+   is not worth 110 KB.
+
+   The element is empty on purpose — the script measures every glyph and writes
+   the SVG. The paragraph below it is what a reader without JS gets: the same
+   sentence, flat and legible. */
+const TEXT =
+  'The fastest line is never straight, every curve earns its place, and the finish only proves the path.';
+
+/* Authored in a 1600x900 space and overshooting both edges (x runs -20 to 1620)
+   so the line still reads edge to edge once the viewBox is sliced to the
+   viewport's aspect ratio. */
+const PATH =
+  'M -20 780 C 80 760, 150 690, 210 580 C 275 460, 350 395, 460 385 C 570 375, 640 415, 720 455 C 800 495, 870 515, 950 495 C 1030 475, 1060 400, 1110 310 C 1155 228, 1210 185, 1290 182 C 1370 180, 1420 250, 1460 350 C 1505 465, 1545 590, 1620 680';
+---
+<section
+  class="tpath"
+  data-text-on-path
+  data-text={TEXT}
+  data-path={PATH}
+  data-text-position="above"
+  data-split="words"
+  data-scrub-distance="300"
+  data-direction="ltr"
+  data-font-size="48"
+  data-letter-spacing="0em"
+  data-curve-spread="1"
+  data-disable=""
+>
+  <p class="tpath-flat">{TEXT}</p>
+</section>

@@ -1,0 +1,47 @@
+---
+/* Section two. The surface is ours — one sheet of glass that arrives as a
+   staircase (see stepped.js). The card grid is cloned from amirmo.design's
+   "What I Can Do": 1192px container, 24px gutters, a row of two wide cards over
+   a row of three square ones, white cards at 20px radius with 12px padding and a
+   two-layer shadow. Measured, not eyeballed.
+   The words are ours — the reference repeats one placeholder paragraph across
+   its own cards, so there was nothing worth copying there. */
+/* glyph ids match prof() in glyph-gl.js: 0 #, 1 $, 2 %, 3 &, 4 *
+   one canvas per well — five wells at two aspect ratios cannot share one. */
+const wide = [
+  { g: 0, hue: '#1E90FF', t: 'Product & interface design',
+    d: 'SaaS products, dashboards, onboarding flows and the small screens nobody screenshots but everybody uses.' },
+  { g: 1, hue: '#00A387', t: 'Design systems',
+    d: 'Tokens, components and the documentation that keeps a team building the same product a year from now.' },
+];
+const square = [
+  { g: 2, hue: '#E0208C', t: 'Prototyping', d: 'Motion and interaction prototypes that answer a question before it becomes a rebuild.' },
+  { g: 3, hue: '#F0521E', t: 'Brand & identity', d: 'Marks, type and the rules that hold them together across every surface.' },
+  { g: 4, hue: '#C98A00', t: 'Web & motion', d: 'Sites built to be felt — real typography, real motion, no template underneath.' },
+];
+---
+<section class="set" id="set">
+  <div class="glass" aria-hidden="true"></div>
+  <div class="set-in">
+    <div class="wrap">
+      <p class="set-lbl">Design services</p>
+      <h2 class="set-h">What I can do</h2>
+      <p class="set-sub">A suite of design work to take a product from a rough direction to something people trust.</p>
+
+      <div class="cards">
+        {wide.map((c) => (
+          <article class="card card-wide">
+            <div class="card-art"><canvas data-glyph={c.g} data-hue={c.hue} aria-hidden="true"></canvas></div>
+            <div class="card-txt"><h3>{c.t}</h3><p>{c.d}</p></div>
+          </article>
+        ))}
+        {square.map((c) => (
+          <article class="card card-sq">
+            <div class="card-art"><canvas data-glyph={c.g} data-hue={c.hue} aria-hidden="true"></canvas></div>
+            <div class="card-txt"><h3>{c.t}</h3><p>{c.d}</p></div>
+          </article>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>

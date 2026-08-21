@@ -1,0 +1,31 @@
+---
+import Base from '../layouts/Base.astro';
+import Loader from '../components/Loader.astro';
+import Nav from '../components/Nav.astro';
+import Hero from '../components/Hero.astro';
+import TextOnPath from '../components/TextOnPath.astro';
+import Why from '../components/Why.astro';
+---
+<Base
+  title="himalay. — UI/UX designer"
+  description="UI/UX designer building interfaces and experiences with staying power. Product design, design systems and prototyping for teams that sweat the details."
+>
+  <Loader />
+  <Nav />
+  <main id="top">
+    <Hero />
+    <!-- One sheet of glass over the fixed hash, and the sentence rides it. The
+         staircase (stepped.js) still climbs this pane — it measures the pane's
+         TOP against the viewport, not its height, so the 300vh reveal track
+         inside lengthens the pane without touching the climb.
+         TextPath.astro (the marquee arc that used to sit here), About.astro and
+         GlyphSet.astro are all still in src/components/, just unwired. -->
+    <div class="pane">
+      <div class="glass" aria-hidden="true"></div>
+      <TextOnPath />
+    </div>
+    <!-- Section three: reserved, deliberately empty. -->
+    <section class="chapter-3"></section>
+    <Why />
+  </main>
+</Base>

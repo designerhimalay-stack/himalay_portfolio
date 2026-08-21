@@ -1,0 +1,16 @@
+---
+/* Each line is its own block and never wraps — the break is the design. .ln-i is
+   what the arrival translates behind .ln's clip; the halftone is painted on
+   .ln-i because background-clip:text does not survive a transformed ancestor. */
+---
+<section class="hero">
+  <div class="wrap">
+    <h1 class="d1 dotted"><span class="ln"><span class="ln-i">designing products <span class="amp">&amp;</span></span></span><span class="ln"><span class="ln-i">human experience.</span></span></h1>
+  </div>
+
+  <div class="stage">
+    <!-- live raymarched glass hash. no shadow, no backdrop. -->
+    <canvas id="hashgl" aria-label="Glass hash symbol"></canvas>
+    <img class="hash-fallback" src="/assets/img/hash-clean.png" alt="Glass hash symbol" width="660" height="820" />
+  </div>
+</section>

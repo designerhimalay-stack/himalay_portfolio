@@ -1,0 +1,26 @@
+---
+/* Text on a path.
+
+   Written from scratch, not lifted: annnimate.com gates its source behind a
+   membership, so the mechanism here is the plain SVG one — a <textPath> bound to
+   a curve, with startOffset driven per frame. No library.
+
+   The phrase repeats so the curve is always full; the driver wraps the offset by
+   exactly one repetition's length, which is what makes the loop seamless rather
+   than snapping back. */
+const PHRASE = 'interfaces · design systems · motion · prototypes · ';
+const REPEATS = 6;
+---
+<section class="arc-sec">
+  <h2 class="sr-only">What I build</h2>
+  <svg class="arc" viewBox="0 0 1200 420" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+    <defs>
+      <!-- a shallow arc: deep enough to read as a curve, flat enough that the
+           letters never rotate past comfortable -->
+      <path id="arcPath" d="M -140,340 C 240,110 960,110 1340,340" fill="none" />
+    </defs>
+    <text class="arc-txt" dy="0">
+      <textPath href="#arcPath" startOffset="0">{PHRASE.repeat(REPEATS)}</textPath>
+    </text>
+  </svg>
+</section>

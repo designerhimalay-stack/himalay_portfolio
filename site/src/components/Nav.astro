@@ -1,0 +1,15 @@
+---
+/* Three arms pivot about the link's right edge and converge on 0deg; the .dots
+   span is where dots-gl.js parks its shared canvas on hover. */
+const links = ['Work.', 'Playground.', 'About.', 'Resume.'];
+---
+<nav class="nav" id="nav">
+  <div class="bar">
+    <a class="mark" href="#top">himalay.</a>
+    <div class="links">
+      {links.map((label) => (
+        <a class="navlink" href="#top"><span class="clip"><span class="sizer">{label}</span><span class="arm a1">{label}</span><span class="arm a2"><i /></span><span class="dots" aria-hidden="true" /><span class="arm a3"><i>{label}</i></span></span></a>
+      ))}
+    </div>
+  </div>
+</nav>

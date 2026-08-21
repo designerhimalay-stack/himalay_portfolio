@@ -1,0 +1,85 @@
+---
+/* Section four — the pinned four-card wipe, rebuilt from blink.trade's
+   "[ Why blink? ]" block. Measured off the live site, not eyeballed: the whole
+   mechanic is one clamped progress value, and the numbers behind it are written
+   up in docs/research/components/pinned-wipe.spec.md.
+
+   PANELS is deliberately a data array. The reference's copy is here verbatim so
+   the clone can be diffed against the original frame-for-frame; swapping in
+   Himalay's own four cards is an edit to this array and nothing else. `viz`
+   names the canvas renderer in scripts/why-viz.js.
+
+   Panels alternate their column direction — even panels put the heading on top
+   and the number at the foot, odd panels flip it. That alternation is what stops
+   two adjacent cards from reading as one repeated template. */
+const PANELS = [
+  {
+    title: 'Trade at the speed of light',
+    body: 'Most crypto exchanges run in the cloud. blink is built on physical infrastructure: low-latency fiber, colocated access, and purpose-built systems for faster execution.',
+    stat: '200',
+    unit: 'μs',
+    viz: 'fiber',
+  },
+  {
+    title: 'Equal access, equal length.',
+    body: 'Anyone can connect through blink’s colocated access layer. Equalized fiber means the edge comes from better trading, not private infrastructure advantages.',
+    stat: '1',
+    unit: 'km',
+    viz: 'radar',
+  },
+  {
+    title: 'Verifiable',
+    body: 'blink makes sequencing, market data, and settlement independently checkable instead of asking traders to trust a black-box exchange.',
+    stat: '15',
+    unit: 's',
+    viz: 'book',
+  },
+  {
+    title: 'Built for regulated markets',
+    body: 'blink is designed for the next era of U.S. market structure: high-performance execution, transparent settlement, and a path toward compliant 24/7 trading.',
+    stat: '24/7',
+    unit: '',
+    viz: 'curve',
+  },
+];
+
+/* One fewer step than there are panels: each step slides the rail half a
+   viewport, and the last panel needs no step of its own to arrive. The extra
+   100svh of track past the final step is the reference's hold — the last pair
+   sits still under the wheel before the page moves on. */
+const STEPS = PANELS.length - 1;
+---
+
+<section class="why" id="why" style={`--steps:${STEPS}`}>
+  <div class="why-pin">
+    <div class="why-head">
+      <h2 class="why-eyebrow" data-split="word" data-delay="400">[ Why blink? ]</h2>
+    </div>
+
+    <div class="why-stage">
+      <div class="why-rail">
+        {PANELS.map((p, i) => (
+          <article class="why-panel" style={`--i:${i};z-index:${PANELS.length - i}`}>
+            <div class="why-card">
+              <div class="why-copy">
+                <div class="why-copy-head">
+                  <h3 class="why-title" data-split="word">{p.title}</h3>
+                  <p class="why-body" data-split="line" data-delay="200">{p.body}</p>
+                </div>
+                <p class="why-stat">
+                  <span class="why-figure" data-split="char">{p.stat}</span>
+                  {p.unit && <span class="why-unit" data-split="char" data-delay="100">{p.unit}</span>}
+                </p>
+              </div>
+              <div class="why-viz"><canvas data-viz={p.viz}></canvas></div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+
+    <!-- the reference grains the whole page; we grain only this section so the
+         rest of the site keeps its own paper -->
+    <div class="why-grain" aria-hidden="true"><i></i></div>
+  </div>
+</section>

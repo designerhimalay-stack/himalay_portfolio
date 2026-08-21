@@ -3,3 +3,8 @@
 
 # os cruft
 .DS_Store
+
+# astro
+site/node_modules/
+site/dist/
+site/.astro/

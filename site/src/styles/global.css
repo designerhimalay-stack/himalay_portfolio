@@ -1,0 +1,699 @@
+/* ============ tokens (measured from source) ============ */
+:root{
+  --bg:#F6F6F9; --ink:#131316; --muted:#70728F; --muted-2:#9193AC;
+  --line:#E3E4E8; --line-2:#BDBEC7; --accent:#1EF7FF;
+  --f-ui:"Instrument Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --f-body:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  /* Geist Mono stands in for the reference's Aeonik Mono Pro, which is licensed
+     and not ours to ship. Same neo-grotesque skeleton, same unslashed zero, same
+     flat terminals — swap the first name here if the real face is ever bought. */
+  --f-mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  --spring:cubic-bezier(.34,1.4,.5,1);
+  --pad:40px; --maxw:1360px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:var(--f-body);font-size:16px;line-height:1.38;letter-spacing:-.16px;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+h1{margin:0}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 var(--pad)}
+
+/* ============ display type ============ */
+.d1{font-family:var(--f-ui);font-size:clamp(26px,7.4vw,132px);line-height:.9;
+    font-weight:500;letter-spacing:-.07em}
+/* each line is its own block and never wraps — the break is the design,
+   not a by-product of where the text happens to run out of room.
+   flow-root, not block: .ln-i carries negative block margins (see below) and a
+   plain block would let them collapse through .ln, shifting the line — and
+   shifting it in .d1hot's absolute context but not in .d1's normal flow, which
+   is the divergence that rendered the headline doubled once before. */
+.d1 .ln{display:flow-root;white-space:nowrap}
+/* the display tracking is tight enough to collide with the ampersand */
+.d1 .amp{letter-spacing:0;padding:0 .05em}
+
+/* halftone fill — the site's signature effect */
+/* the halftone lives on the element that carries the text, not on the h1.
+   background-clip:text does not survive a transformed descendant — once the
+   arrival puts translate3d on .ln-i the clip is computed in a separate layer and
+   the dots wash out. Painting it on .ln-i keeps the clip and the glyphs in one
+   paint context, and the dots then travel with the line as it comes up behind
+   its mask, which is what a printed line should do.
+   .d1 .ln-i catches the hover clones too; --dot resolves per context. */
+.dotted{--dot:#131316}
+.d1 .ln-i{
+  /* the reference screens at 3px, but its type is 168px against our 107px, so
+     matching that grid clogs the glyphs. 3.5px keeps the gaps open at our size. */
+  background-image:radial-gradient(var(--dot) .9px, transparent 1.05px);
+  background-size:3.5px 3.5px;
+  /* the dots are painted in the background box, and background-clip:text can
+     only reveal ink that the box already covers. line-height .9 makes that box
+     SHORTER than the type: Instrument Sans is 970/-250 per 1000, so its content
+     area is 1.22em and the half-leading is -.16em a side. At 132px the box
+     stopped 11.9px below the baseline while the descenders run 28.4px — every
+     g, p and y was shorn flat 16.5px early. The padding grows the paint area
+     past the ink; the matching negative margin hands the space back, so .ln is
+     still exactly .9em tall and the .d1hot clones lay out on the original. */
+  padding-block:.22em;margin-block:-.22em;
+  -webkit-background-clip:text;background-clip:text;
+  color:transparent;-webkit-text-fill-color:transparent;
+}
+/* the old dotdrift was dead code — .hero .d1's riseIn outranked it, so it never
+   ran once. Reviving it now would need the same animation, in phase, on both the
+   base lines and hero-dots.js's clones, or the two grids double up. Left off. */
+@supports not ((-webkit-background-clip:text) or (background-clip:text)){
+  .d1 .ln-i{color:var(--line-2);-webkit-text-fill-color:var(--line-2)}
+}
+
+/* ---- headline colour wave (hero-dots.js) ----
+   two exact copies of the h1 stack over it: the colour flood and, above it, a
+   denser ring that leads the front. both are revealed by a radial mask growing
+   from the hovered letter's centre and clipped to that letter's column, so the
+   wave stays inside one glyph the way the reference keeps it inside one tile.
+   the copies share the h1's box, so their dot grids sit exactly on its own —
+   were the .dotted drift ever to run (today .hero .d1's riseIn overrides it)
+   these would need the same animation or the grids would double up. */
+@property --r{syntax:"<length>";inherits:true;initial-value:0px}
+.d1{transition-property:--r;transition-timing-function:linear;transition-duration:0ms}
+.d1.nowave{transition:none}          /* so the wave can be snapped back to 0 */
+
+.d1hot{position:absolute;inset:0;pointer-events:none;
+  -webkit-user-select:none;user-select:none;   /* a copy of the headline must never be selectable */
+  --dot:var(--hot,#1E90FF);                    /* .d1 .ln-i paints it; this only sets the ink */
+  opacity:0;transition:opacity .26s var(--ease-out);
+  -webkit-mask-image:radial-gradient(circle at var(--cx,50%) var(--cy,50%),
+    #000 0 var(--r),rgba(0,0,0,0) calc(var(--r) + 9px));
+  mask-image:radial-gradient(circle at var(--cx,50%) var(--cy,50%),
+    #000 0 var(--r),rgba(0,0,0,0) calc(var(--r) + 9px))}
+.d1hot.on{opacity:1}
+
+/* the crest. the reference brightens its wavefront because it sits on black —
+   on our paper the same job is done by going darker, not lighter. */
+.d1hot.crest{--dot:color-mix(in oklab,var(--hot,#1E90FF) 72%,#000);
+  -webkit-mask-image:radial-gradient(circle at var(--cx,50%) var(--cy,50%),
+    rgba(0,0,0,0) 0 calc(var(--r) - 34px),#000 calc(var(--r) - 22px),
+    #000 calc(var(--r) - 4px),rgba(0,0,0,0) var(--r));
+  mask-image:radial-gradient(circle at var(--cx,50%) var(--cy,50%),
+    rgba(0,0,0,0) 0 calc(var(--r) - 34px),#000 calc(var(--r) - 22px),
+    #000 calc(var(--r) - 4px),rgba(0,0,0,0) var(--r))}
+
+/* ============ nav — floating pill ============ */
+.nav{position:fixed;top:8px;left:0;right:0;z-index:100;
+  display:flex;justify-content:center;pointer-events:none}
+.bar{
+  display:flex;align-items:center;justify-content:space-between;
+  width:min(600px,calc(100vw - 32px));height:52px;
+  padding:8px 28px 8px 14px;border-radius:16px;border:1.5px solid #fff;
+  background:rgba(237,237,240,.82);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  pointer-events:auto;
+}
+.mark{font-family:var(--f-ui);font-weight:700;font-size:20px;letter-spacing:-.05em;
+  padding-left:8px}
+.links{display:flex;align-items:center;gap:8px}
+
+/* hover, measured frame-by-frame off the reference: three arms pivot about the
+   link's right edge and all converge on 0deg, each travelling a different
+   distance (18 vs 35), which is what staggers the fill ahead of the label.
+   the dark label never fades - it leaves purely by rotating to 25deg. the
+   black pill is arm 2's fill arriving and staying; the link has no background.
+   (the reference blurs that fill 2px as a motion streak - dropped by choice.)
+   the reference springs, overshooting ~10% before settling. */
+.navlink{position:relative;display:block;
+  font-family:var(--f-ui);font-size:14px;font-weight:600;letter-spacing:-.01em}
+.navlink:focus-visible{outline:none}
+
+.clip{display:block;position:relative;overflow:hidden;border-radius:100px}
+.sizer{display:block;height:40px;line-height:40px;padding:0 14px;
+  white-space:nowrap;visibility:hidden}   /* in flow purely to size the link */
+
+.arm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  transform-origin:100% 50%;white-space:nowrap;
+  transition:transform .42s var(--spring)}
+/* the reference holds this at opacity 1 and lets the window clip it, but at
+   our link widths a remnant still shows, so it fades once the pill covers it */
+.a1{color:#09090B;transition:transform .42s var(--spring),opacity .1s linear .16s}
+.a2{transform:rotate(-18deg)}
+.a2 i{display:block;width:100%;height:30px;background:#09090B;border-radius:100px;
+  opacity:0;transition:opacity .15s linear}
+.a3{transform:rotate(-35deg);color:#fff}
+.a3 i{display:block;font-style:normal;opacity:0;transform:scale(.6);
+  transition:opacity .17s linear .04s,transform .42s var(--spring)}
+
+.navlink:hover .a1,.navlink:focus-visible .a1{transform:rotate(25deg);opacity:0}
+.navlink:hover .a2,.navlink:focus-visible .a2{transform:rotate(0deg)}
+.navlink:hover .a2 i,.navlink:focus-visible .a2 i{opacity:1}
+.navlink:hover .a3,.navlink:focus-visible .a3{transform:rotate(0deg)}
+.navlink:hover .a3 i,.navlink:focus-visible .a3 i{opacity:1;transform:scale(1)}
+
+/* the dot-field. sits over arm 2's black pill and under arm 3's white label, so
+   the pixels read as the pill's own surface rather than a layer on top of it.
+   inset 2px like the reference, and clipped to the pill's radius — nothing must
+   land on the light bar outside it. the canvas is created and driven by
+   dots-gl.js; at rest there is no canvas here at all. */
+.dots{position:absolute;left:2px;right:2px;top:50%;height:26px;margin-top:-13px;
+  border-radius:100px;overflow:hidden;pointer-events:none;
+  opacity:0;transition:opacity .22s linear}
+.dots.on{opacity:1}
+/* the reference dims the middle of each tile so its logo still reads through
+   the field — same job here, except the label fills far more of the pill than
+   a logo does, so the falloff has to be wider and softer than their 42.89%. */
+.dots::after{content:"";position:absolute;inset:0;
+  background:radial-gradient(58% 62% at 50% 50%,rgba(9,9,11,.9) 10%,rgba(9,9,11,0) 100%)}
+/* the wave arrives from the pill's centre, which is already black by the time
+   the front reaches the edges — the delay keeps the first dots off arm 2 while
+   it is still swinging in at -18deg */
+.navlink:hover .dots,.navlink:focus-visible .dots{transition-delay:.06s}
+.dots canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+/* ============ hero ============ */
+/* composition matched to the reference: object centred, top edge ~52vh, running off the fold */
+/* no overflow clip: the hash sinks below the hero's box on scroll and the hero
+   would shear it off. body already carries overflow-x:hidden for the sideways case. */
+.hero{position:relative;min-height:100svh;padding:168px 0 0;text-align:center}
+.hero .d1{max-width:1300px;margin:0 auto;position:relative;z-index:2}
+
+.stage{position:absolute;inset:0;pointer-events:none}
+
+/* Fixed, not absolute: the hash has to arrive at the centre of the VIEWPORT and
+   hold there, which a box scrolling inside the hero cannot do.
+   The canvas is 100vh tall and the shader draws the hash dead centre of it, so
+   "centred in the viewport" is exactly top:0 — no magic number.
+   --par is then the offset FROM that centre: parallax.js holds it at the hero's
+   composition (32vh − 150px) at rest and eases it to 0 as the second section
+   arrives. */
+#hashgl{
+  position:fixed;left:50%;
+  transform:translateX(-50%) translate3d(0,var(--par,0px),0);
+  top:0;
+  height:100vh;
+  width:min(50vw,620px);
+  z-index:3;                     /* hash paints over the headline */
+  display:block;background:transparent;   /* no backdrop, no shadow */
+}
+#hashgl.gl-fail{display:none}
+.hash-fallback{
+  position:fixed;left:50%;
+  transform:translateX(-50%) translate3d(0,var(--par,0px),0) scale(var(--scale,1));
+  top:19vh;height:62vh;width:auto;z-index:3;   /* 19vh centres a 62vh box */
+}
+#hashgl.gl-on ~ .hash-fallback{display:none}
+
+/* ============ intro loader ============ */
+body.loading{overflow:hidden}
+.loader{position:fixed;inset:0;z-index:900;background:#fff;color:var(--ink);
+  display:grid;place-items:center;
+  transition:opacity .65s var(--ease-out),transform .65s var(--ease-out);
+  /* failsafe: if the script never runs, the page must not stay covered */
+  animation:ldFailsafe 0s linear 8s forwards}
+@keyframes ldFailsafe{to{opacity:0;visibility:hidden;pointer-events:none}}
+.loader.done{opacity:0;transform:scale(1.03);pointer-events:none}
+.loader[hidden]{display:none}          /* display:grid would beat the hidden attribute */
+
+/* six spokes on a 19px radius in a 24 grid — the vertical arm makes it read
+   as an asterisk rather than a snowflake. sized off the greeting so the
+   pairing holds at every width, but well under it: this is a mark beside the
+   word, not a second word. */
+.ld-ast{width:clamp(15px,2.4vw,34px);height:clamp(15px,2.4vw,34px);
+  flex:none;color:var(--ink);fill:none;overflow:visible}
+.ld-mid{display:flex;align-items:center;gap:30px;position:relative;z-index:1}
+.ld-word{font-family:var(--f-ui);font-weight:400;letter-spacing:-.035em;line-height:1;
+  font-size:clamp(38px,6.4vw,86px)}
+.ld-word.swap{animation:ldWordIn .5s var(--ease-out) both}
+@keyframes ldWordIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+.ld-pct{position:absolute;right:var(--pad);bottom:20px;z-index:1;
+  display:flex;align-items:flex-end;
+  font-family:var(--f-ui);font-weight:400;letter-spacing:-.045em;line-height:.82}
+#ldNum{font-size:clamp(54px,9vw,124px);font-variant-numeric:tabular-nums}
+.ld-sym{font-size:clamp(15px,1.9vw,26px);color:var(--ink);margin:0 0 .6em 3px}
+
+/* the hero holds itself closed via html.js (see arrival choreography) — nothing
+   here may depend on loader.js running, or a failed script ships a blank hero */
+
+/* ============ responsive ============ */
+@media (max-width:1080px){ :root{--pad:28px} }
+@media (max-width:720px){
+  :root{--pad:20px}
+  .bar{width:calc(100vw - 20px);height:46px;padding:5px 10px 5px 8px}
+  .mark{font-size:16px;padding-left:4px}
+  .links{gap:4px}
+  .navlink{font-size:12px}
+  .sizer{height:34px;line-height:34px;padding:0 10px}
+  .hero{padding:130px 0 0}
+  #hashgl{width:96vw;height:92vh;top:36vh}
+  .hash-fallback{top:54vh;height:52vh}
+}
+/* below ~380px "Playground." no longer clears the wordmark — tighten once more */
+@media (max-width:380px){
+  .mark{font-size:15px}
+  .links{gap:3px}
+  .navlink{font-size:11px}
+  .sizer{height:30px;line-height:30px;padding:0 8px}
+}
+/* at 320px the wordmark and four labels cannot coexist — links win, brand
+   still reads in the hero headline just below */
+@media (max-width:340px){
+  .mark{display:none}
+  .bar{justify-content:center}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important}
+}
+
+
+/* ============ arrival choreography (hero-intro.js) ============
+   Motion §0: the base state IS the finished state. Every closed state below is
+   behind `html.js`, so no-JS — and a script that throws — still render a complete
+   hero. The old build held the hero at opacity 0 behind `body.loading` and only
+   loader.js could release it; one failed script left the page permanently blank.
+   Timings live in hero-intro.js, not here: a CSS delay would be a second clock. */
+
+/* the headline reads line by line behind a curtain, not as a fade (Motion §1).
+   The mask is a clip, not padding plus a negative margin. Padding needs that
+   margin to cancel it, and a negative margin on a first child collapses inside
+   .d1's normal flow but NOT inside .d1hot, which is absolutely positioned and so
+   a formatting context of its own — the hover clone landed 10.66px above the
+   real line and the headline rendered doubled. The same divergence pulled the
+   mask box below the ascenders and sheared 7.4px off the top of every one.
+   clip-path has no layout footprint, so both layers lay out identically and the
+   negative insets let the ink overflow the line box instead of being cut.
+   Only the real lines close — .d1 > .ln never matches the clones. */
+.ln-i{display:block;transition:transform .9s cubic-bezier(.16,1,.3,1)}
+html.js .d1 > .ln{clip-path:inset(-.22em 0 -.30em 0)}
+/* 145%, not Motion's 110%: the travel has to clear the line box AND the .30em
+   the clip lets through below it, or a sliver of the closed line shows. */
+html.js .d1 > .ln > .ln-i{transform:translate3d(0,145%,0)}
+html.js .d1 > .ln.is-in > .ln-i{transform:none}
+
+.bar{transition:opacity .6s cubic-bezier(.16,1,.3,1),transform .6s cubic-bezier(.16,1,.3,1)}
+html.js .bar{opacity:0;transform:translateY(26px)}
+html.js .bar.is-in{opacity:1;transform:none}
+
+/* the hash needs the whole viewport while it is oversized, or it is sliced down
+   both sides by its resting 620px box. uv is normalised by R.y and centred, so it
+   renders at an identical on-screen size and place in either width — the swap back
+   is invisible once the hash is small enough to fit. */
+/* the intro still needs the full width, but not at the cost of the offset —
+   dropping the transform here would snap the hash to the viewport top */
+html.intro #hashgl{width:100vw;left:0;transform:translate3d(0,var(--par,0px),0)}
+
+@media (prefers-reduced-motion:reduce){
+  html.js .d1 > .ln{clip-path:none}
+  html.js .d1 > .ln > .ln-i{transform:none}
+  html.js .bar{opacity:1;transform:none}
+}
+
+
+/* ============ the glyph set, on glass ============
+   Taken from td-moro's stat cards and applied to the whole section: the page
+   colour at 70% over backdrop-filter blur(10px), 20px radius, no shadow. The
+   hash sinks behind at 0.48 of scroll and reads through the blur — that
+   see-through is the point, so this surface is never opaque.
+   The staircase is a clip-path on this same pane, not seven scaled boxes:
+   backdrop-filter follows a transform, so scaling a blurred box stretches its
+   blur. Clipping leaves the blur untouched and the geometry identical. */
+.set{position:relative}
+/* one pane: starts a band above SECTION TWO and ends at the bottom of the glyph
+   set, spanning both. Two panes meant two independently-clipped blurs and a hard
+   line across the hash where they met. */
+.glass{position:absolute;left:0;right:0;top:calc(-1 * var(--band));bottom:0;
+  background:rgba(246,246,249,.7);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  /* stepped.js writes the polygon; this keeps it closed before first paint */
+  -webkit-clip-path:polygon(0 0,100% 0,100% 0,0 0);
+  clip-path:polygon(0 0,100% 0,100% 0,0 0);
+  pointer-events:none}
+.set-in{position:relative;z-index:1;padding:140px 0 160px}
+
+.set-lbl{margin:0 0 14px;font-family:var(--f-ui);font-size:13px;font-weight:600;
+  letter-spacing:.02em;color:var(--muted)}
+.set-h{margin:0;font-family:var(--f-ui);font-weight:500;letter-spacing:-.04em;
+  font-size:clamp(28px,4.4vw,60px);line-height:1.02}
+.set-sub{margin:18px 0 0;max-width:46ch;font-size:15px;line-height:1.55;color:var(--muted)}
+
+/* the grid, measured off amirmo.design: 1192 container, 24px gutters, two wide
+   cards over three square ones. flex-wrap rather than grid because the two rows
+   have different column counts and a single track definition cannot express that
+   without fighting it. */
+.cards{display:flex;flex-wrap:wrap;gap:24px;max-width:1192px;margin:56px auto 0}
+.card{background:#fff;border-radius:20px;padding:12px;
+  box-shadow:0 4px 4px -2px rgba(0,0,0,.05), 0 2px 12px -4px rgba(0,0,0,.06);
+  display:flex;flex-direction:column}
+.card-wide{flex:1 1 calc(50% - 12px)}
+.card-sq{flex:1 1 calc(33.333% - 16px)}
+/* the art well: the reference fills this with a render per service. ours will
+   take the glass marks — for now it holds the space at the right proportion. */
+.card-art{position:relative;border-radius:12px;background:#F4F4F7;aspect-ratio:16/10;flex:none}
+.card-art canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.card-art canvas.gl-fail{display:none}
+.card-sq .card-art{aspect-ratio:1/1}
+.card-txt{padding:18px 10px 12px}
+.card-txt h3{margin:0;font-family:var(--f-ui);font-size:21px;font-weight:600;
+  letter-spacing:-.01em;color:#1C1C1C}
+.card-txt p{margin:8px 0 0;font-size:14px;line-height:1.6;color:#3D3D3D}
+
+@media (max-width:900px){
+  .card-wide,.card-sq{flex:1 1 100%}
+  .cards{gap:16px;margin-top:40px}
+}
+
+@media (max-width:720px){
+  .set-in{padding:96px 0 110px}
+  .set-row{margin-top:48px}
+  .pane{--band:26vh}
+  /* two over two — the canvas has to carry two cell rows */
+}
+
+
+/* ============ section two — the statement, orbited by the tools ============
+   The pane and the staircase belong to BOTH glass sections now, not to .set.
+   One backdrop-filter can only sample within its own clip, so a second pane
+   starting at .set would put a hard seam across the hash exactly where the two
+   met — the bug the .set comment already records. .pane is that single sheet:
+   it opens a band above section two and runs to the bottom of the glyph set. */
+.pane{position:relative;z-index:4;--band:39vh;
+  /* the pane took its height from the sections inside it; with those gone it
+     needs its own, or the glass collapses and the staircase has nothing to
+     climb onto */
+  min-height:140vh}
+
+/* the column is the subject; the orbit is atmosphere and never overlaps it */
+.ab{position:relative;padding:184px 0 132px}
+.ab-col{position:relative;z-index:1;max-width:660px;margin:0 auto}
+/* The hash holds dead centre of the viewport and this column is centred over it,
+   so the pane's blur alone still left blue bars running through #70728F body
+   copy. This veil lifts the paper under the type only — it fades out well before
+   the orbit, so the hash still reads at the edges where the tools are. It is a
+   plain background, NOT a second backdrop-filter, so the one-pane rule holds. */
+.ab-col::before{content:"";position:absolute;z-index:-1;inset:-9% -14%;
+  pointer-events:none;
+  background:radial-gradient(58% 52% at 50% 47%,
+    rgba(246,246,249,.94) 0%, rgba(246,246,249,.86) 44%, rgba(246,246,249,0) 100%)}
+
+.ab-eye{margin:0 0 20px;font-family:var(--f-body);font-size:16px;
+  letter-spacing:-.1px;color:var(--muted)}
+
+/* muted base, ink emphasis — amirmo's own method, and it needs no second family.
+   The weight steps 400 -> 500 with the colour so the emphasis still reads for
+   anyone who cannot separate #70728F from #131316. */
+.ab-lead{margin:0;position:relative;font-family:var(--f-ui);font-weight:400;
+  font-size:clamp(24px,3.05vw,42px);line-height:1.34;letter-spacing:-.035em;
+  color:var(--muted);text-wrap:pretty}
+.ab-lead em{font-style:normal;font-weight:500;color:var(--ink)}
+
+.ab-body{margin:38px 0 0;max-width:54ch;font-size:16.5px;line-height:1.62;
+  color:var(--muted)}
+
+/* An inline slot, not an image: the real character sits in it and carries the
+   meaning (& is the conjunction, % is a quantity), so the sentence still reads
+   in a screen reader and with WebGL off. mark-gl.js measures these boxes and
+   draws the glass over them; only then does the character go transparent. */
+/* wide enough that the glass drawn over it (~1.3em) still clears the words on
+   either side — at 1.05em the ampersand's ink touched both neighbours */
+.mk{display:inline-block;width:1.4em;text-align:center;position:relative}
+/* the opening beat carries no word, so it gets less room than the two that do */
+.mk-o{width:1.15em;text-align:left}
+/* A mark that lands first on a line reads as a bullet, not as the word it is
+   standing in for — both & and % orphaned that way. Each is bound to the word
+   before it so the pair wraps together and a line can never open with a mark.
+   The spaces are real, so a screen reader still hears "systems & the". */
+.nb{white-space:nowrap}
+.mk i{font-style:normal;font-weight:400;color:var(--muted-2)}
+html.mk-on .mk i{color:transparent}
+/* the beat between two sentences is the one mark that carries no word */
+.mk-q i{color:var(--line-2)}
+
+/* the glass overlay spills well past the paragraph: a mark is drawn at ~1.6x the
+   character it replaces, and the first and last lines would clip it otherwise */
+/* The overlay spills past the paragraph on ALL four sides. A mark is drawn at
+   ~1.3x the character it replaces and the opening * hangs into the left margin,
+   so a canvas the exact width of the column sheared its left half off. */
+#markgl{position:absolute;left:-1.1em;width:calc(100% + 2.2em);
+  top:-.6em;height:calc(100% + 1.2em);
+  display:block;pointer-events:none;z-index:2;background:transparent}
+#markgl.gl-fail{display:none}
+
+/* ---- the orbit ---- */
+.ab-orbit{position:absolute;inset:0;z-index:0;pointer-events:none}
+/* .tool owns position + scroll parallax; .tool-b owns the pose + the float, so
+   the two never fight over one transform */
+.tool{position:absolute;left:var(--x);top:var(--y);margin:0;
+  width:var(--s);height:var(--s);
+  transform:translate(-50%,-50%) translate3d(0,var(--py,0px),0)}
+.tool-b{display:block;width:100%;height:100%;
+  transform:perspective(560px) rotateZ(var(--rz)) rotateY(var(--ry)) rotateX(9deg);
+  animation:toolfloat 9.5s var(--ph) ease-in-out infinite}
+.tool-ic{display:block;width:100%;height:100%;overflow:visible;
+  filter:drop-shadow(0 12px 16px rgba(19,19,22,.14))}
+.tool-tx{font-family:var(--f-ui);font-weight:600;font-size:36px;
+  letter-spacing:-.03em;text-anchor:middle;dominant-baseline:central}
+/* detached contact shadow, as in the reference: the object floats, so its shadow
+   is a separate soft ellipse on the page rather than an outline glued to it */
+.tool-sh{position:absolute;left:50%;top:86%;width:72%;height:24%;
+  transform:translateX(-50%);border-radius:50%;
+  background:rgba(19,19,22,.20);filter:blur(12px)}
+@keyframes toolfloat{0%,100%{translate:0 -7px}50%{translate:0 7px}}
+
+/* Bounded at BOTH ends. Left open at the bottom these .ab-orbit .tool-x rules
+   (0,2,0) outranked the scatter's own `left:auto` (0,1,0), so on a phone the six
+   kept their ring percentages inside the flex row and ran 277px off-screen. */
+@media (min-width:901px) and (max-width:1180px){
+  .ab{padding:150px 0 110px}
+  .ab-orbit .tool-figma{left:7%}    .ab-orbit .tool-ae{left:2.5%}
+  .ab-orbit .tool-ps{left:9%}       .ab-orbit .tool-spline{left:93%}
+  .ab-orbit .tool-blend{left:97.5%} .ab-orbit .tool-rive{left:91%}
+}
+/* Below this the column fills the width and there is no margin left to orbit in.
+   The tools do NOT drop out — they are the section's other half and a phone
+   would lose them entirely. The ring unwraps into a scatter below the copy:
+   same objects, same float, same contact shadows, just no longer surrounding
+   anything. Sitting them behind the type instead would destroy both. */
+@media (max-width:900px){
+  .ab{padding:120px 0 96px;display:flex;flex-direction:column}
+  .ab > .wrap{order:1}
+  .ab-orbit{order:2;position:static;inset:auto;
+    display:flex;flex-wrap:wrap;justify-content:center;align-items:center;
+    gap:30px 34px;margin:62px auto 0;max-width:400px;padding:0 var(--pad)}
+  .tool{position:relative;left:auto;top:auto;width:56px;height:56px;
+    transform:translate3d(0,var(--py,0px),0)}
+  .tool-b{transform:perspective(420px) rotateZ(var(--rz)) rotateY(calc(var(--ry) * .5)) rotateX(7deg)}
+  .tool-sh{top:82%;height:22%;filter:blur(9px)}
+  .ab-body{margin-top:30px;font-size:16px}
+  /* Both of these overhang their box by a percentage of the column, which is
+     harmless while the column is 660px inside a 1360px wrap and runs off-screen
+     the moment the column IS the screen. The veil is a pseudo-element, so it
+     never showed up in an element sweep — only in body.scrollWidth. */
+  .ab-col::before{inset:-6% -5%}
+  #markgl{left:-.7em;width:calc(100% + 1.4em)}
+}
+@media (prefers-reduced-motion:reduce){
+  .tool-b{animation:none}
+}
+
+
+
+/* ============ text on a path ============
+   startOffset is an SVG attribute, so textpath.js writes it per frame — see the
+   note there. Everything else is static: the curve, the type, the fill. */
+.arc-sec{position:relative;z-index:1;padding:120px 0 40px}
+.arc{display:block;width:100%;height:auto;overflow:visible}
+.arc-txt{font-family:var(--f-ui);font-weight:500;font-size:58px;
+  letter-spacing:-.02em;fill:var(--ink)}
+/* the curve is authored at 1200 wide; below that the type would crowd, so it
+   steps down with the viewport rather than scaling the whole svg away */
+@media (max-width:900px){ .arc-txt{font-size:46px} .arc-sec{padding:80px 0 24px} }
+@media (max-width:600px){ .arc-txt{font-size:38px} }
+
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+
+/* ============ text on a path — scroll reveal (text-on-path.js) ============
+   Cloned from annnimate's Text On Path; the sticky stage, the 100svh height and
+   the never-drawn curve are all theirs, measured off the live component. The
+   stage must be the sticky element and the wrap must carry the track height —
+   sticky pins to the wrap's box, so a wrap of 300vh is exactly how far the
+   sentence gets to reveal. */
+.tpath{--tp-fg:var(--ink);
+  /* no paper of its own: it rides INSIDE .pane, so the glass — page colour at
+     70% over a blur, with the hash reading through it — is the background. A
+     background here would cover the sheet the section is supposed to sit on.
+     z-index 1 puts the type over the glass, the same way .arc-sec did. */
+  position:relative;z-index:1;width:100%;min-height:100svh;background:none}
+.tpath-stage{position:sticky;top:0;height:100svh;overflow:hidden}
+.tpath-svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+/* the line is the armature, never the picture */
+.tpath-path{fill:none;stroke:none;pointer-events:none}
+.tpath-text{font-family:var(--f-ui);font-weight:400;fill:var(--tp-fg);
+  -webkit-font-smoothing:antialiased}
+/* each glyph is positioned by its own centre, so the anchor has to be middle —
+   with the default start anchor every letter would sit half a glyph late */
+.tpath-letter{text-anchor:middle}
+.tpath-measure{font-family:var(--f-ui);font-weight:400;visibility:hidden;pointer-events:none}
+/* what a reader without JS gets: the same sentence, flat */
+.tpath-flat{margin:0;padding:38vh var(--pad);font-family:var(--f-ui);font-weight:400;
+  font-size:clamp(22px,2.6vw,40px);line-height:1.3;letter-spacing:-.02em;
+  color:var(--tp-fg);max-width:22ch}
+
+/* ============================================================================
+   section four — the pinned four-card wipe
+   Cloned from blink.trade's "[ Why blink? ]" block; every number below was read
+   off the live site rather than guessed (docs/research/components/pinned-wipe.spec.md).
+
+   The whole mechanic is ONE value. Over the pinned range each viewport-height of
+   scroll advances s by 1, the rail slides 50% per unit of s, and every panel's
+   vertical travel is two clamps of the same s. why.js writes --tx and --ty; this
+   sheet does the rest.
+   ========================================================================== */
+.why{
+  /* the reference's warm paper, kept whole: the section is a transplant and
+     half-translating the palette would leave it neither its own nor ours */
+  --why-paper:#edeceb;      /* the card side */
+  --why-board:#dcd9d5;      /* the track behind the pin; the pin covers it at every scroll position */
+  --why-ink:#272424;
+  --why-rule:#b2ada7;
+  --why-hot:#cc7245;        /* sampled off the reference's own pixels */
+  --why-cool:#8a9a5b;
+
+  /* their fluid scale verbatim: min at a 375px viewport, max at 1600px, and
+     100vw (scrollbar included) is what they interpolate against — matching that
+     is what makes 117.03px come out at 117.03px and not 116.5px */
+  --why-fluid:calc((100vw - 375px) / 1225);
+  --t-title:clamp(18px, calc(18px + 4 * var(--why-fluid)), 22px);
+  --t-figure:clamp(64px, calc(64px + 61 * var(--why-fluid)), 125px);
+  --t-unit:clamp(36px, calc(36px + 28 * var(--why-fluid)), 64px);
+  --t-body:clamp(15px, calc(15px + 1 * var(--why-fluid)), 16px);
+  --t-label:clamp(13px, calc(13px + 1 * var(--why-fluid)), 14px);
+
+  position:relative;
+  /* the hero's fixed hash canvas paints at z-index 3 and would otherwise show
+     straight through this section's paper */
+  z-index:4;
+  /* one step per gap between panels; the pin is released exactly as the last
+     step finishes, which is why the travel needs no separate hold */
+  height:calc(var(--steps) * 100svh);
+  background:var(--why-board);
+  color:var(--why-ink);
+}
+.why-pin{position:sticky;top:0;display:flex;flex-direction:column;
+  height:100svh;overflow:hidden;background:var(--why-paper)}
+
+.why-head{display:flex;align-items:center;justify-content:center;padding:96px 0;flex:none}
+.why-eyebrow{margin:0;font-family:var(--f-mono);font-weight:400;
+  font-size:var(--t-label);line-height:1;letter-spacing:.01em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--why-ink) 65%,transparent)}
+
+.why-stage{position:relative;flex:1;min-height:0;overflow:hidden}
+/* inset by 1px a side so the outermost panel's 1px outline is not clipped away
+   by the stage's own overflow:hidden */
+.why-rail{position:absolute;inset:0 1px;transform:translateX(var(--tx,0%));
+  will-change:transform}
+
+/* +1px on the width so two neighbouring panels overlap by exactly one pixel and
+   their inset outlines stack into a single hairline instead of doubling up */
+.why-panel{position:absolute;top:0;height:100%;width:calc(50% + 1px);
+  left:calc(var(--i) * 50%);transform:translateY(var(--ty,0%));will-change:transform}
+
+.why-card{position:relative;display:flex;height:100%;
+  outline:1px solid var(--why-rule);outline-offset:-1px;
+  border-bottom:1px solid var(--why-rule)}
+
+.why-copy{position:relative;z-index:1;display:flex;flex:1;min-width:0;
+  flex-direction:column;justify-content:space-between;gap:64px;
+  max-width:450px;padding:64px}
+/* every other card flips heading and figure. Without it four cards in a row read
+   as one template repeated; with it, the pair on screen always reads as a spread */
+.why-panel:nth-child(even) .why-copy{flex-direction:column-reverse}
+
+.why-copy-head{display:flex;flex-direction:column;gap:16px}
+.why-title{margin:0;font-family:var(--f-mono);font-weight:400;
+  font-size:var(--t-title);line-height:1.2;letter-spacing:.01em;text-transform:uppercase}
+.why-body{margin:0;font-size:var(--t-body);line-height:1.3;
+  color:color-mix(in srgb,var(--why-ink) 65%,transparent)}
+
+.why-stat{margin:0;display:flex;align-items:flex-end;gap:12px;font-family:var(--f-mono)}
+.why-figure{font-size:var(--t-figure);line-height:1;letter-spacing:-.02em}
+/* .15em of padding, not a margin: the unit sits on the figure's baseline by eye,
+   and eye means a fraction of the unit's own size, not a fixed nudge */
+.why-unit{display:block;font-size:var(--t-unit);line-height:1;letter-spacing:-.02em;
+  padding-bottom:.15em;color:color-mix(in srgb,var(--why-ink) 40%,transparent)}
+
+/* 1:2 — the artwork bay is always half as wide as the card is tall, so the
+   canvas geometry (a 250px radius against a 694px height) holds at every size */
+/* no background of its own: measuring the reference showed the artwork bay and
+   the copy side reading the identical (215,214,213), so the bay is the same
+   paper and the tonal step across the card is only the rule field and the grain */
+.why-viz{position:absolute;inset-block:0;right:0;aspect-ratio:1 / 2;max-width:100%;
+  overflow:hidden;isolation:isolate}
+.why-viz canvas{display:block;width:100%;height:100%;
+  opacity:0;transition:opacity .2s var(--ease-out)}
+.why-viz canvas.on{opacity:1}
+
+/* ---- split-text reveal ----
+   The reference tweens nothing: each fragment holds at 8px down and clear, then
+   SNAPS to place 100ms after the one before it. Read as a bug at first; it is
+   the effect — the copy assembles like a terminal filling in, which is the whole
+   register of the section. A tween here would soften it into every other site. */
+.why [data-split] .w,
+.why [data-split] .c{display:inline-block}
+.why [data-split] .l{display:block}
+.why [data-split] .w,
+.why [data-split] .c,
+.why [data-split] .l{opacity:0;transform:translateY(8px)}
+.why [data-split] .in{opacity:1;transform:none}
+/* before why.js has split anything, and if it never runs, the copy is just copy */
+.why-split-off [data-split] .w,
+.why-split-off [data-split] .c,
+.why-split-off [data-split] .l{opacity:1;transform:none}
+
+/* ---- grain ----
+   300% of the box, shifted in ten discrete steps. Steps, not a tween: a sliding
+   grain reads as a moving texture, a stepping one reads as film. */
+.why-grain{position:absolute;inset:0;z-index:3;overflow:hidden;pointer-events:none}
+.why-grain i{position:absolute;top:-100%;left:-100%;width:300%;height:300%;
+  background:url(/assets/img/grain.png) repeat;opacity:.2;
+  animation:why-grain 8s steps(10) infinite}
+@keyframes why-grain{
+  0%{transform:translate(0,0)}      10%{transform:translate(-5%,-10%)}
+  20%{transform:translate(-15%,-20%)} 30%{transform:translate(-5%,-10%)}
+  40%{transform:translate(-15%,-20%)} 50%{transform:translate(-5%,-10%)}
+  60%{transform:translate(-15%,-20%)} 70%{transform:translate(-5%,-10%)}
+  80%{transform:translate(-15%,-20%)} 90%{transform:translate(-5%,-10%)}
+  100%{transform:translate(0,0)}
+}
+
+/* ---- stacked ----
+   Below the reference's lg breakpoint the pin, the rail and the wipe all come
+   off and the four cards are simply four cards. The horizontal mechanic needs a
+   spare half-viewport to slide into; a phone has none, so there is nothing to
+   translate and faking it would only cost the reader the copy. */
+@media (max-width:1023.98px){
+  .why{height:auto}
+  .why-pin{position:static;height:auto;overflow:visible}
+  .why-head{padding:64px 0}
+  .why-stage{overflow:visible}
+  .why-rail{position:static;inset:auto;transform:none;display:flex;flex-direction:column}
+  .why-panel{position:static;width:auto;left:auto;transform:none;z-index:auto!important}
+  .why-card{height:auto;min-height:min(72vh,430px)}
+  .why-copy{max-width:220px;padding:32px 0 32px 32px;flex-direction:column}
+  .why-panel:nth-child(even) .why-copy{flex-direction:column}
+  .why-grain{position:fixed}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .why{height:auto}
+  .why-pin{position:static;height:auto;overflow:visible}
+  .why-stage{overflow:visible}
+  .why-rail{position:static;inset:auto;transform:none;display:flex;flex-direction:column}
+  .why-panel{position:static;width:auto;left:auto;transform:none;z-index:auto!important}
+  .why-card{height:auto;min-height:min(72vh,560px)}
+  .why-grain i{animation:none}
+  .why-viz canvas{transition:none}
+}

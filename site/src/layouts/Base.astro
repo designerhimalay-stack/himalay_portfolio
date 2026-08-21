@@ -1,0 +1,51 @@
+---
+import '../styles/global.css';
+import 'lenis/dist/lenis.css';
+
+interface Props { title: string; description: string; }
+const { title, description } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- the js gate must land before first paint, or the hero flashes open then closes -->
+  <script is:inline>document.documentElement.className += " js"</script>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Inter:wght@400;500;700&family=Geist+Mono:wght@400&display=swap" />
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png" />
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+  <meta name="theme-color" content="#1E90FF" />
+</head>
+<body class="loading">
+  <slot />
+
+  <!-- Order is load-bearing and matches the old index.html exactly. Static
+       imports evaluate in sequence, and these modules are IIFEs that assign to
+       window (HashGL, heroIntro) and read the DOM on evaluation. -->
+  <script>
+    import '../scripts/smooth.js';
+    import '../scripts/loader.js';
+    import '../scripts/tab.js';
+    import '../scripts/hash-gl.js';
+    import '../scripts/dots-gl.js';
+    import '../scripts/glyph-gl.js';
+    import '../scripts/mark-gl.js';
+    import '../scripts/hero-intro.js';
+    import '../scripts/hero-dots.js';
+    import '../scripts/stepped.js';
+    import '../scripts/parallax.js';
+    import '../scripts/textpath.js';
+    import '../scripts/text-on-path.js';
+    import '../scripts/orbit.js';
+    import '../scripts/why.js';
+    import '../scripts/why-viz.js';
+    import '../scripts/app.js';
+  </script>
+</body>
+</html>

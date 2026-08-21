@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="himalay.">
+  <rect width="32" height="32" rx="7.5" fill="#ffffff"/>
+  <g fill="#1E90FF">
+    <rect x="10.2" y="5.8" width="3.4" height="20.4" rx="1.7"/>
+    <rect x="18.4" y="5.8" width="3.4" height="20.4" rx="1.7"/>
+    <rect x="5.8" y="10.4" width="20.4" height="3.4" rx="1.7"/>
+    <rect x="5.8" y="18.2" width="20.4" height="3.4" rx="1.7"/>
+  </g>
+</svg>
