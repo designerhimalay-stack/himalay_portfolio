@@ -4,7 +4,8 @@ import Loader from '../components/Loader.astro';
 import Nav from '../components/Nav.astro';
 import Hero from '../components/Hero.astro';
 import TextOnPath from '../components/TextOnPath.astro';
-import Why from '../components/Why.astro';
+import Lab from '../components/Lab.astro';
+import Dial from '../components/Dial.astro';
 ---
 <Base
   title="himalay. — UI/UX designer"
@@ -14,18 +15,24 @@ import Why from '../components/Why.astro';
   <Nav />
   <main id="top">
     <Hero />
-    <!-- One sheet of glass over the fixed hash, and the sentence rides it. The
-         staircase (stepped.js) still climbs this pane — it measures the pane's
-         TOP against the viewport, not its height, so the 300vh reveal track
-         inside lengthens the pane without touching the climb.
-         TextPath.astro (the marquee arc that used to sit here), About.astro and
-         GlyphSet.astro are all still in src/components/, just unwired. -->
+
+    <!-- Section two: the dial. The hash is already parked at viewport centre by
+         parallax.js when the hero ends, so the ring simply rises to meet it. -->
+    <Dial />
+
+    <!-- Section three: the glass alone. The sentence that used to ride it has
+         moved down to section four, so this is now a quiet band of the same
+         material — the staircase still climbs it, there is simply nothing
+         written on it. -->
+    <Lab />
+
+    <!-- Section four: the same sheet, carrying the sentence.
+         stepped.js pairs each .glass with its OWN .pane rather than picking the
+         first of each globally, which is what lets two of these coexist. -->
     <div class="pane">
       <div class="glass" aria-hidden="true"></div>
       <TextOnPath />
     </div>
-    <!-- Section three: reserved, deliberately empty. -->
-    <section class="chapter-3"></section>
-    <Why />
+
   </main>
 </Base>

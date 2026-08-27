@@ -1,0 +1,183 @@
+---
+/* The dial — cloned from labs.anyflow.agency's "We are good at" section.
+   Measurements in docs/research/components/anyflow-ring.spec.md.
+
+   THE MARK DOES NOT TRAVEL TO THE RING. THE RING RISES TO MEET THE MARK.
+   That is the finding the whole section turns on, and it is invisible in a
+   screenshot: across 13 scroll samples their mark's centre never moves off
+   viewport centre while the ring climbs 882 -> 771 -> 660 -> 549 at exactly 1:1
+   with the page. They meet, and only then does the ring start to turn.
+
+   Which makes this section almost free here. parallax.js already glides the
+   hash to the exact centre of the viewport by the end of the hero and holds it
+   there — so the pinned mark this effect needs already exists, already in the
+   right place. Nothing in this file draws the mark; it just gives the ring
+   somewhere to rise to.
+
+   The approach needs no JS either. The ring sits in normal flow inside a 100vh
+   stage, so scrolling raises it toward the fixed mark on its own. dial.js only
+   takes over AFTER the meeting, for the rotation and the pulse.
+
+   What is left on the face is deliberately little: the glass, one hairline
+   circle, four engraved words and a single marker that follows the pointer.
+   Four coloured segments and a 24-tick chapter ring were there and are not any
+   more — the words already name the four disciplines, so the segments were
+   decorating a point already made, and the ticks were instrument-cosplay on an
+   object that reads as a dial without them. */
+
+/* --- dial geometry -------------------------------------------------------
+   Everything is generated from one radius so the shapes stay correct if it
+   changes. Angles run from twelve o'clock, clockwise, which is how a dial is
+   read — SVG's own 0 is at three o'clock, hence the -cos/+sin pairing. */
+const R = 345, C = 350;
+const pt = (deg, r = R) => {
+  const a = (deg * Math.PI) / 180;
+  return [(C + r * Math.sin(a)).toFixed(2), (C - r * Math.cos(a)).toFixed(2)];
+};
+/* the segment's outer arc — the coloured edge */
+const arc = (f, t) => {
+  const [x0, y0] = pt(f), [x1, y1] = pt(t);
+  return `M ${x0} ${y0} A ${R} ${R} 0 ${t - f > 180 ? 1 : 0} 1 ${x1} ${y1}`;
+};
+/* the filled wedge under the marker */
+const wedge = (f, t) => {
+  const [x0, y0] = pt(f), [x1, y1] = pt(t);
+  return `M ${C} ${C} L ${x0} ${y0} A ${R} ${R} 0 ${t - f > 180 ? 1 : 0} 1 ${x1} ${y1} Z`;
+};
+
+/* The marker: one 45-degree arc, the eighth of the circle the reference gives
+   each of its segments. It is the only thing on the face that moves, so it is
+   the only thing left on it. */
+const MARKER = { from: 22.5, to: 67.5 };
+
+/* An arc for a word to sit on.
+
+   ALL FOUR RUN THE SAME WAY, and that is the point of them.
+
+   The direction of the path decides which way a word faces on the rim: a
+   clockwise arc puts the letter tops OUTWARD, a counter-clockwise one puts them
+   INWARD. This used to mix the two — clockwise across the top, counter across
+   the bottom — because that keeps every word upright to the reader wherever it
+   sits. It also means the ring carries two words facing in and two facing out,
+   and once the dial rotates that is the thing you notice: four labels that
+   cannot agree which way is up.
+
+   Facing them all inward costs the top two their uprightness and buys the
+   object its consistency. That is the right trade here, because this is
+   engraving on a bezel rather than a caption — it belongs to the ring, not to
+   the page, and a real engraved ring reads round.
+
+   r=302 sits inside the rim — the viewBox is 700 and the circle is already
+   r=345, so there is no room beyond it — and well clear of the hash, which
+   occupies about 182 units. */
+const textArc = (bearing, span, r, cw) => {
+  const f = cw ? bearing - span : bearing + span;
+  const t = cw ? bearing + span : bearing - span;
+  const [x0, y0] = pt(f, r), [x1, y1] = pt(t, r);
+  return `M ${x0} ${y0} A ${r} ${r} 0 0 ${cw ? 1 : 0} ${x1} ${y1}`;
+};
+const WORD_R = 302, WORD_SPAN = 40;
+
+const LABELS = [
+  /* bearing from twelve, clockwise. cw is false on all four — see textArc. */
+  { t: 'Research',    at:   0, cw: false },
+  { t: 'Interface',   at:  90, cw: false },
+  { t: 'Systems',     at: 180, cw: false },
+  { t: 'Prototyping', at: 270, cw: false },
+];
+---
+<section class="dial" data-dial>
+  <div class="dial-stage">
+    <!-- the two hairlines their stage is ruled with -->
+    <span class="dial-rule dial-rule--h" aria-hidden="true"></span>
+    <span class="dial-rule dial-rule--v" aria-hidden="true"></span>
+
+    <!-- The dial, cloned from thewatch.60fps.fr's HERO (not its loader — the
+         loader is a separate 700-box svg with a .progress-arc, and it is the
+         wrong object: it never has a size at any scroll position on the page).
+
+         The hero dial is TWO overlaid svgs, and every value here is measured:
+
+         .circle-svg   a faint outer circle at stroke-opacity .1, then FOUR
+                       segment groups. Each carries a wedge fill at
+                       fill-opacity .07 (painted only for the selected one), two
+                       bounding radii at stroke-opacity .1, and an arc at
+                       stroke-width 3 in its OWN colour. Those four colours are
+                       the watch variants, and they are why the reference shows a
+                       black arc up top and a pale cream one below at the same
+                       time. Their arcs measure ~280 of a 2168 circumference —
+                       an eighth of the circle each.
+
+         .cut-circle   a second svg in #919191 holding the circle and four
+                       crossing diameters, every one of them broken by a dash
+                       pattern. That gapping is the "cut": the lines read as
+                       spokes near the rim with the middle cut away, which is
+                       what stops eight lines through a centre looking like a
+                       pie chart.
+
+         The path data is generated below rather than copied — an arc and a
+         diameter are just trigonometry, and generating them means the geometry
+         stays correct if the radius ever changes. -->
+    <!-- The statement, arriving from both edges to flank the dial.
+
+         Only the ENTRANCE is borrowed from the earlier reveal — the two halves
+         fly in on perspective + rotateY from opposite sides. None of the pinned
+         wipe that used to carry it comes with it: there is no pin here, no
+         second act, and nothing for the halves to hand over to. They arrive,
+         they settle either side of the dial, and that is the whole move.
+
+         Reversed, though. That version was a DEPARTURE: it rested centred and
+         scrolling threw it apart. This one starts thrown and resolves, because
+         here the text is arriving to frame something rather than clearing out
+         of the way. Same transform, run the other direction.
+
+         They settle on the dial's own centre line, flush to it — left half set
+         right-aligned, right half left-aligned — so the three read as one
+         object rather than a circle with words parked near it. -->
+    <div class="dial-say" aria-label="Four disciplines. One practice.">
+      <p class="dial-say-h" data-say="l" aria-hidden="true">Four disciplines.</p>
+      <p class="dial-say-h" data-say="r" aria-hidden="true">One practice.</p>
+    </div>
+
+    <div class="dial-ring" data-dial-ring aria-hidden="true">
+      <span class="dial-glass"></span>
+
+      <!-- The ripple, running as a CONTINUOUS TRAIN rather than one event.
+
+           Four rings share a single phase, each offset a quarter-cycle behind
+           the last and each wrapping back to the centre when it reaches the rim.
+           So the surface never stops moving: the first ripple leaves as the hash
+           breaks the dial's edge, more follow it the whole way in, and the last
+           one runs out after it has seated. One expanding circle reads as a
+           pulse; a train reads as water. -->
+      <span class="dial-wave" data-dial-wave><i></i><i></i><i></i><i></i></span>
+
+      <svg class="dial-face" viewBox="0 0 700 700">
+        <circle class="dial-outer" cx="350" cy="350" r="345" />
+        <!-- ONE marker, not four segments.
+
+             Four coloured edges and four engraved words were saying the same
+             thing twice — the words already name the four disciplines, so the
+             segments were only decorating a point already made. What survives is
+             the single live one: the wedge and its edge, tracking the pointer.
+             Everything a dial needs is a face and one thing moving on it. -->
+        <g class="dial-seg is-selected" data-dial-seg="track">
+          <path class="dial-wedge" d={wedge(MARKER.from, MARKER.to)} />
+          <path class="dial-edge" d={arc(MARKER.from, MARKER.to)} />
+        </g>
+
+        <defs>
+          {LABELS.map((l, i) => (
+            <path id={`dialArc${i}`} fill="none"
+                  d={textArc(l.at, WORD_SPAN, WORD_R, l.cw)} />
+          ))}
+        </defs>
+        {LABELS.map((l, i) => (
+          <g class="dial-word">
+            <text><textPath href={`#dialArc${i}`} startOffset="50%">{l.t}</textPath></text>
+          </g>
+        ))}
+      </svg>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,39 @@
+---
+/* The process — five stages, in the card style recreated earlier.
+
+   Card anatomy is unchanged: a heading, the content, then a tinted panel inset
+   from the sides that bleeds off the card's bottom edge. What changed is what
+   sits between heading and panel — a paragraph became the three things that
+   actually happen in that stage, because a stage is a list of work, not a claim.
+
+   The grid runs 2 over 3: a wide opening pair, then the three-part middle where
+   most of the work happens. Five reads as a sequence rather than a menu, and the
+   numbering carries the order that a grid would otherwise lose. */
+
+const STAGES = [
+  { span: 'half',  n: '01', h: 'Discovery',
+    items: ['Creative brief', 'Brand research', 'Mood boards'] },
+  { span: 'half',  n: '02', h: 'Concept',
+    items: ['Visual direction', 'Art direction', 'Storyboarding'] },
+  { span: 'third', n: '03', h: 'Design',
+    items: ['UI/UX craft', 'Motion design', 'Interaction design'] },
+  { span: 'third', n: '04', h: 'Develop',
+    items: ['Creative coding', 'WebGL & 3D', 'Animations'] },
+  { span: 'third', n: '05', h: 'Polish',
+    items: ['Micro-interactions', 'Performance', 'Pixel perfect'] },
+];
+---
+<div class="svc" data-svc>
+  {STAGES.map(s => (
+    <article class={`svc-card is-${s.span}`} data-svc-card>
+      <div class="svc-top">
+        <p class="svc-n" aria-hidden="true">{s.n}</p>
+        <h3 class="svc-h">{s.h}</h3>
+      </div>
+      <ul class="svc-list">
+        {s.items.map(i => <li>{i}</li>)}
+      </ul>
+      <div class="svc-media" aria-hidden="true"></div>
+    </article>
+  ))}
+</div>

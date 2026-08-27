@@ -48,15 +48,29 @@
     if (P < 0) P = 0; else if (P > 1) P = 1;
     var e = 1 - (1 - P) * (1 - P);          /* ease-out: settles rather than stops */
 
-    /* the hero pose: 32vh − 150px, the offset the composition was built around.
-       eased to 0, which is dead centre of the viewport. */
+    /* The hero pose: 32vh − 150px, the offset the composition was built around,
+       eased to 0 — which is dead centre of the viewport.
+
+       The mark OVERLAPS the headline from here, and that is the composition
+       rather than a collision: #hashgl is z-index 3 against the type's 2, and
+       the two sharing one space is what this hero has always been. A measured
+       offset that parked the mark BELOW the type lived here for one build and
+       is gone — it bought legibility by taking the overlap apart, and the
+       solid fill buys the same legibility without touching it. */
     var rest = vh * 0.32 - 150;
     var px = (rest * (1 - e)).toFixed(1) + 'px';
     if (cv) cv.style.setProperty('--par', px);
     if (img) img.style.setProperty('--par', px);
 
-    if (window.HashGL) window.HashGL.set(1 - SHRINK * e, TURN * e);
-    if (img) img.style.setProperty('--scale', (1 - SHRINK * e).toFixed(4));
+    /* P clamps at 1, so past the hero this keeps re-asserting the same rest pose
+       every frame — harmless until hash-journey.js started writing a different one
+       on those same frames. Whichever landed last would win, and that came down to
+       import order in Base.astro. The journey raises this flag the moment its first
+       act begins and owns the pose from there; the hero keeps everything up to it. */
+    if (!window.__hashJourney) {
+      if (window.HashGL) window.HashGL.set(1 - SHRINK * e, TURN * e);
+      if (img) img.style.setProperty('--scale', (1 - SHRINK * e).toFixed(4));
+    }
   }
   function request() { if (!pending) { pending = true; requestAnimationFrame(draw); } }
 

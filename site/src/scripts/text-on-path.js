@@ -97,6 +97,43 @@
       return widths[ch];
     }
 
+    /* Where a glyph's INK sits relative to its baseline, at its middle — negative
+       above it, in the same y-down sense as everything else here.
+
+       Canvas, not getBBox. getBBox on an SVG <text> reports the LAYOUT box, built
+       from the font's ascent and descent, so it returns the identical rectangle
+       for 'x' and for '*' and the difference between them comes out as zero. It
+       measured 58.5px tall for an asterisk at 48px, which is the em box, not the
+       mark. measureText's actualBoundingBox* are true ink extents and are the
+       only thing here that can tell the two glyphs apart. */
+    var ink = null;
+    function inkMid(ch) {
+      if (!ink) ink = document.createElement('canvas').getContext('2d');
+      var cs = getComputedStyle(ruler);
+      ink.font = cs.fontStyle + ' ' + cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
+      var m = ink.measureText(ch);
+      if (typeof m.actualBoundingBoxAscent !== 'number') return 0;   /* unsupported: leave it be */
+      /* ascent runs up from the baseline, descent down, so the ink spans
+         -ascent .. +descent and its middle is the average of the two */
+      return (m.actualBoundingBoxDescent - m.actualBoundingBoxAscent) / 2;
+    }
+
+    /* Every glyph is placed on its BASELINE. That is right for letters and wrong
+       for an asterisk: the mark is cut high in the em, up at the superscript
+       position, so on a shared baseline it floats above the line it is meant to
+       punctuate instead of sitting in it.
+
+       The drop is MEASURED, not nudged: the gap between where an 'x' carries its
+       ink and where '*' carries its, which is correct for whatever face is
+       actually loaded rather than a number tuned to one. Cached per layout and
+       cleared on rebuild, so a webfont arriving late cannot strand it on a
+       fallback's metrics. */
+    var astDrop = null;
+    function asteriskDrop() {
+      if (astDrop === null) astDrop = inkMid('x') - inkMid('*');
+      return astDrop;
+    }
+
     function at(l, total) { return path.getPointAtLength(clamp(l, 0, total)); }
 
     function tangent(l, total) {
@@ -133,6 +170,7 @@
     function layout() {
       while (group.firstChild) group.removeChild(group.firstChild);
       units = [];
+      astDrop = null;                 /* re-measure: the face may have changed */
 
       var total = path.getTotalLength();
       var extra = tracking.indexOf('em') !== -1
@@ -181,10 +219,13 @@
         var ang = tangent(mid, total);
         var g = el('text', 'tpath-letter');
         /* the glyph is anchored at its own centre (text-anchor:middle) and
-           pushed along the normal, then turned to sit on the tangent */
+           pushed along the normal, then turned to sit on the tangent.
+           off runs along that normal and grows DOWNWARD, so dropping the
+           asterisk into the x-height band means adding to it. */
+        var off = draw + (chars[i] === '*' ? asteriskDrop() : 0);
         g.setAttribute('transform',
-          'translate(' + (pt.x + -Math.sin(ang) * draw).toFixed(2) + ' ' +
-          (pt.y + Math.cos(ang) * draw).toFixed(2) + ') rotate(' +
+          'translate(' + (pt.x + -Math.sin(ang) * off).toFixed(2) + ' ' +
+          (pt.y + Math.cos(ang) * off).toFixed(2) + ') rotate(' +
           (ang * 180 / Math.PI).toFixed(2) + ')');
         g.textContent = chars[i];
         group.appendChild(g);

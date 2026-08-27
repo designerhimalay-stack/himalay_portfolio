@@ -15,7 +15,14 @@
 // arrival choreography (hero-intro.js drives these; 1.0 / 0.0 is the rest pose).
 // ZOOM is a focal-length change, not a scale: apparent size is exactly linear in
 // FIT, so ZOOM 2.6 renders the hash 2.6x with the perspective a longer lens gives.
-'uniform float SPIN;uniform float ZOOM;',
+'uniform float SPIN;uniform float ZOOM;uniform float ROLL;',
+// DIAL is the dial's live circle in DEVICE pixels (x, y, radius) and DMIX how
+// much of the recolour is enabled. The blue is swapped for the dial's glass only
+// where the fragment falls inside that circle, so as the ring rises over the
+// hash the recolour spreads across it on its own — the "partial" is geometry,
+// not a separate animation. gl_FragCoord.y counts up from the bottom, so the
+// caller flips y before sending it.
+'uniform vec3 DIAL;uniform float DMIX;uniform vec3 TINT;',
 
 // ---- true dimensions, normalised so height = 1.0 (146 mm) ----
 'const float S=1.0/146.0;',
@@ -65,13 +72,19 @@
 
 'mat3 rotY(float a){float c=cos(a),s=sin(a);return mat3(c,0,-s,0,1,0,s,0,c);}',
 'mat3 rotX(float a){float c=cos(a),s=sin(a);return mat3(1,0,0,0,c,-s,0,s,c);}',
+'mat3 rotZ(float a){float c=cos(a),s=sin(a);return mat3(c,-s,0,s,c,0,0,0,1);}',
 
 'void main(){',
 '  vec2 uv=(gl_FragCoord.xy-0.5*R)/R.y;',
 '  vec3 ro=vec3(0.,0.,4.2), rd=normalize(vec3(uv,-FIT*ZOOM));',
 '  float yaw=0.34+M.x*0.78+sin(T*0.20)*0.10+SPIN;',
 '  float pit=-0.04-M.y*0.34+sin(T*0.155)*0.045;',   // -M.y: screen-up cursor tips the face up
-'  mat3 inv=rotX(-pit)*rotY(-yaw);',
+// ROLL is applied innermost so it turns the object in the image plane rather than
+// swinging the camera: yaw on its own is a turntable, and a turntable is what the
+// journey across section three would read as without this. Order matters — put
+// rotZ outermost and the roll would rotate the yaw axis with it, which tumbles the
+// hash out of frame instead of tilting it.
+'  mat3 inv=rotZ(-ROLL)*rotX(-pit)*rotY(-yaw);',
 '  vec3 rol=inv*ro, rdl=inv*rd;',
 '  float t=march(rol,rdl);',
 '  if(t<0.0){gl_FragColor=vec4(0.);return;}',
@@ -83,15 +96,35 @@
 
 // ---- refraction: in through the front, across the interior, out the back ----
 '  vec3 tint=vec3(0.0);',
-'  vec3 baseC=vec3(0.0130,0.2789,1.0);',          // #1E90FF linear
-'  vec3 sig=vec3(7.4,1.75,0.34);',                // red dies first, blue survives
+'  float ins=1.0-smoothstep(DIAL.z-46.0,DIAL.z,length(gl_FragCoord.xy-DIAL.xy));',
+'  vec3 baseC=mix(vec3(0.0130,0.2789,1.0),TINT,ins*DMIX);',   // #1E90FF linear -> dial glass
+// Absorption, not baseC, is what makes this blue: 7.4/1.75/0.34 kills red
+// fastest and lets blue through, so tinting baseC alone left the hash still
+// unmistakably blue. It has to go neutral alongside — but not weak. Colourless
+// is not weightless: at ~0.6 the object passed nearly all its light and vanished
+// against a near-white dial. Clear glass reads because its THICK paths go dark,
+// so ~1.7, level across the channels, keeps the hue out while keeping the deep
+// edges and caustics the material gets its definition from.
+'  vec3 sig=mix(vec3(7.4,1.75,0.34),vec3(1.72,1.69,1.63),ins*DMIX);',
 '  vec3 rIn=refract(rdl,N,1.0/IOR);',
 '  float tIn=marchIn(pos,rIn);',
 '  vec3 pOut=pos+rIn*tIn;',
 '  vec3 NOut=-nrm(pOut);',
 '  vec3 absorb=exp(-sig*tIn*4.6)*baseC;',
-// dispersion: exit each channel at a slightly different IOR -> coloured fringing
-'  float d0=0.010;',
+// Dispersion: each channel leaves at a slightly different IOR, so edges fringe.
+// 0.010 is right for the blue hash, where a strong split would just muddy a
+// colour the object already has. Inside the dial the glass is colourless, and
+// then dispersion is the ONLY thing left to give it colour — so the spread opens
+// up nearly fivefold there.
+//
+// It does NOT go further, and the reason is worth recording: dispersion can only
+// show colour that the environment already has. envC() here is a neutral studio
+// gradient running grey to near-white, so splitting three channels across it
+// yields warm/cool edges and nothing more — pushed to 0.086 the object went
+// flatter and chalkier, not more spectral. Vivid rainbow fringing needs an
+// environment with real dark/light contrast for the channels to separate
+// ACROSS; that is a change to envC, not to this number.
+'  float d0=mix(0.010,0.048,ins*DMIX);',
 '  vec3 oR=refract(rIn,NOut,IOR-d0);',
 '  vec3 oG=refract(rIn,NOut,IOR);',
 '  vec3 oB=refract(rIn,NOut,IOR+d0);',
@@ -138,7 +171,10 @@
 
   var uR = gl.getUniformLocation(pr,'R'), uT = gl.getUniformLocation(pr,'T'),
       uM = gl.getUniformLocation(pr,'M'), uF = gl.getUniformLocation(pr,'FIT'),
-      uS = gl.getUniformLocation(pr,'SPIN'), uZ = gl.getUniformLocation(pr,'ZOOM');
+      uS = gl.getUniformLocation(pr,'SPIN'), uZ = gl.getUniformLocation(pr,'ZOOM'),
+      uL = gl.getUniformLocation(pr,'ROLL'),
+      uD = gl.getUniformLocation(pr,'DIAL'), uDM = gl.getUniformLocation(pr,'DMIX'),
+      uTN = gl.getUniformLocation(pr,'TINT');
 
   // load pose, held until the cursor moves: 70% right, 15% up of the full look range
   var REST_X=0.70, REST_Y=-0.15;
@@ -150,11 +186,29 @@
   // hero-intro.js owns every timing; this file only renders the pose it is handed.
   // during the intro the canvas is full-width, so the pixel count roughly doubles —
   // the dpr cap comes down to pay for it and goes back up once the hash is still.
-  var spin=0, zoom=1, intro=false, dprCap=1.75;
+  var spin=0, zoom=1, roll=0, intro=false, dprCap=1.75;
+  /* dial circle in CSS px (x, y from the top, radius) and the recolour amount */
+  var dialX=0, dialY=-9999, dialR=0, dialMix=0;
+  /* CLEAR GLASS, not grey. Near-white and very faintly cool, so what comes
+     through the object is essentially the environment rather than a colour of
+     its own — the reference is colourless glass whose darks come from thick
+     edges and internal caustics, not from a tint. A mid grey here reads as
+     frosted, which is the opposite of what it should be. */
+  var TINT=[0.88,0.90,0.95];
   window.HashGL = {
     start: function(){ intro=true; dprCap=1.15; needsDraw=true; },
-    set: function(z, s){ zoom=z; spin=s; needsDraw=true; },
-    done: function(){ intro=false; dprCap=1.75; spin=0; zoom=1; needsDraw=true; }
+    set: function(z, s, r){ zoom=z; spin=s; if (r !== undefined) roll=r; needsDraw=true; },
+    done: function(){ intro=false; dprCap=1.75; spin=0; zoom=1; roll=0; needsDraw=true; },
+    // Section three puts the hash behind 26px of backdrop blur while the canvas is
+    // at its widest. Rendering it at full dpr there is paying for detail the blur
+    // then throws away — 1.0 while it is behind the glass more than covers the
+    // widening (1.91x the fragments, x(1/1.75)^2, is 0.62x of today).
+    /* the dial tells the hash where it is, so the hash can recolour where they
+       overlap. x/y are CSS px from the top-left; r is the CSS radius. */
+    dial: function(x, y, r, mix){
+      dialX=x; dialY=y; dialR=r; dialMix=mix; needsDraw=true;
+    },
+    quality: function(q){ var c = q ? 1.75 : 1.0; if (c !== dprCap) { dprCap = c; needsDraw = true; } }
   };
   function wake(){
     if (active) return;
@@ -171,6 +225,24 @@
   // cursor gone -> settle back to the neutral pose rather than sticking
   document.addEventListener('pointerleave', function(){ tx = 0; ty = 0; });
   addEventListener('blur', function(){ tx = 0; ty = 0; });
+
+  /* THE CANVAS BOX, CACHED.
+
+     draw() read cv.getBoundingClientRect() on every rendered frame. That is a
+     layout read inside the render loop, and this loop runs AFTER the scroll
+     handlers that write --par, the ring's transform and the wireframe's
+     attributes — so it flushed all of their pending layout, every frame, to get
+     a box that had not moved.
+
+     Refreshed from a passive scroll listener instead, which fires BEFORE the
+     frame's writes, when layout is already clean from the previous one. The
+     cost is that the box is one frame stale while --par is actually changing —
+     which is the hero, where dialMix is 0 and the box is not consulted at all.
+     Everywhere the recolour is live the canvas is parked and the cache exact. */
+  var box = null;
+  function remeasure(){ box = cv.getBoundingClientRect(); }
+  addEventListener('scroll', remeasure, { passive: true });
+  addEventListener('resize', remeasure, { passive: true });
 
   function size(){
     var dpr = Math.min(devicePixelRatio||1, dprCap);     // cap: raymarching is fill-rate bound
@@ -197,6 +269,23 @@
     gl.uniform1f(uF, 2.55);
     gl.uniform1f(uS, spin);
     gl.uniform1f(uZ, zoom);
+    gl.uniform1f(uL, roll);
+    /* Into CANVAS space, not viewport space.
+
+       gl_FragCoord is relative to this canvas, and #hashgl is not full-screen:
+       it is min(72vw,900px) wide, 132vh tall and offset -16vh from the top. The
+       first pass converted straight from viewport pixels, so the test circle
+       landed in the wrong place and only the part of the hash that happened to
+       fall inside it recoloured — the whole object should have. Subtract the
+       canvas's own origin first, then flip y, then scale by dpr. */
+    if (!box) remeasure();
+    var _d = box.width ? (cv.width / box.width) : 1;
+    gl.uniform3f(uD,
+      (dialX - box.left) * _d,
+      (box.height - (dialY - box.top)) * _d,
+      dialR * _d);
+    gl.uniform1f(uDM, dialMix);
+    gl.uniform3f(uTN, TINT[0], TINT[1], TINT[2]);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
   function frame(now){

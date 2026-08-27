@@ -15,6 +15,12 @@
   function finish() {
     el.classList.add('done');
     body.classList.remove('loading');
+    // and then take it out of the document. display:none is enough to stop it
+    // being drawn but not always enough to release its compositor layer, and a
+    // released-too-late layer shows: over a white section further down the page
+    // the curtain's greeting and its 100% counter were still faintly there.
+    // 700ms clears the .65s dissolve above with room to spare.
+    setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 700);
     // t=0 for the hero timeline is the START of the curtain dissolve, not the end:
     // the hash must already be large and turning by the time it is visible.
     // race the webfont rather than wait on it (Motion §4) — the headline mask

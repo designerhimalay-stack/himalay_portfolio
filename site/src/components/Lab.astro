@@ -1,0 +1,167 @@
+---
+/* The viewport — section three.
+
+   Two references folded together: the chrome and posture of a 3D editor (a tool
+   rail, a wireframe form on a shadow, property panels, a live readout) carrying
+   the process stages as its content. Scrolling steps the tool: the rail advances,
+   the form in the middle changes and keeps turning, the right panel swaps to
+   that stage's deliverables, and the readout counts the rotation.
+
+   The form is drawn from REAL VERTICES, projected each frame — see lab.js. A
+   CSS rotate on a flat SVG would betray itself the moment the shape turned past
+   a few degrees, because the far edges would not foreshorten. Five forms, one
+   per stage, so the object itself reports which step you are on before you read
+   a word of it.
+
+   Monochrome on the site's own ground rather than the reference's lime. One
+   thing highlighted at a time is what makes an instrument read as precise; a
+   second accent colour would be the loudest thing on a page that has spent four
+   sections staying quiet. */
+
+/* THE RAIL ICONS, KEYED TO THE FORM AND NOT TO A POSITION.
+
+   These were five CSS rules selected by :nth-child — a square, the same square
+   rotated 45 degrees, a circle, a squircle and a dot. Two problems with that,
+   and the second is the one that bit. A rotated square is a DIAMOND, so the
+   pyramid stage was labelled with a shape it does not contain. And because the
+   selectors keyed off position rather than content, the icon could never be
+   wrong in a way the markup could catch: reorder the stages and every glyph
+   silently describes its neighbour.
+
+   Drawn per form instead, and looked up by `s.form`, so an icon is now a
+   property of the shape rather than of where the shape happens to sit. A
+   triangle is also not expressible as a border-radius, which is the honest
+   reason the diamond was there in the first place. */
+const ICON = {
+  cube:     '<rect x="3.2" y="3.2" width="9.6" height="9.6" rx="1" />',
+  /* apex up, sitting on its base — the same posture the wireframe holds */
+  pyramid:  '<path d="M8 2.6 L13.6 13.2 H2.4 Z" stroke-linejoin="round" />',
+  sphere:   '<circle cx="8" cy="8" r="5" />',
+  /* an ellipse for the near rim and the two walls dropping from it: the
+     silhouette of a cylinder, which a rounded rectangle is not */
+  cylinder: '<ellipse cx="8" cy="4.4" rx="4.4" ry="1.8" />' +
+            '<path d="M3.6 4.4v7.2a4.4 1.8 0 0 0 8.8 0V4.4" />',
+  /* four of the lattice's own points, so the last icon is a sample of the last
+     form rather than a full stop */
+  points:   '<g fill="currentColor" stroke="none">' +
+            '<circle cx="5.2" cy="5.2" r="1.15" /><circle cx="10.8" cy="5.2" r="1.15" />' +
+            '<circle cx="5.2" cy="10.8" r="1.15" /><circle cx="10.8" cy="10.8" r="1.15" /></g>',
+};
+
+const STAGES = [
+  { n: '01', h: 'Discovery', form: 'cube',
+    items: ['Creative brief', 'Brand research', 'Mood boards'] },
+  { n: '02', h: 'Concept',   form: 'pyramid',
+    items: ['Visual direction', 'Art direction', 'Storyboarding'] },
+  { n: '03', h: 'Design',    form: 'sphere',
+    items: ['UI/UX craft', 'Motion design', 'Interaction design'] },
+  { n: '04', h: 'Develop',   form: 'cylinder',
+    items: ['Creative coding', 'WebGL & 3D', 'Animations'] },
+  { n: '05', h: 'Polish',    form: 'points',
+    items: ['Micro-interactions', 'Performance', 'Pixel perfect'] },
+];
+---
+<!-- The stage data rides on an ATTRIBUTE, not a JSON script block.
+     Astro owns script tags — it hoists and bundles them — so a data block
+     placed here never reaches the DOM, and lab.js threw on the missing node
+     before it rendered anything at all. Attributes pass through untouched. -->
+<section class="lab" data-lab data-lab-data={JSON.stringify(STAGES)}>
+  <div class="lab-pin">
+    <!-- The corner chrome is gone. It read "Viewport — perspective" on the left
+         and counted "01 / 05" on the right, and both were instrument-cosplay:
+         two more things to read in the top band of a screen that now opens with
+         a real header. The count survives where it is actually useful, inside
+         the timeline in the right panel, next to the thing it measures.
+
+         TWO LINES, ONE SIZE. It was a 10.5px uppercase kicker over a 38px
+         headline, which is two different kinds of type doing one job — and
+         section two states itself as two equal lines ("Four disciplines." /
+         "One practice."), so a small-then-big pairing here made the two
+         sections sound like they were written by different people. Same
+         cadence now: one size, one weight, a claim and its correction.
+
+         The sentence is a pivot on one preposition. "design WITH" is the
+         tooling, which has changed completely and is worth saying out loud in
+         2026; "design BY" is the method underneath it, which has not. Naming AI
+         and then refusing to make it the point is the whole position — the five
+         stages below are what the second line is pointing at. -->
+    <header class="lab-head">
+      <h2 class="lab-h">
+        <span>AI changed the tools I design with.</span>
+        <span>Not the principles I design by.</span>
+      </h2>
+    </header>
+
+    <aside class="lab-rail">
+      <p class="lab-lbl">Forms</p>
+      <ul class="lab-forms">
+        {STAGES.map((s, i) => (
+          <li class="lab-form" data-lab-form={i} aria-hidden="true">
+            <svg viewBox="0 0 16 16" set:html={ICON[s.form]} />
+          </li>
+        ))}
+      </ul>
+
+      <p class="lab-lbl">Stages</p>
+      <ul class="lab-tools">
+        {STAGES.map((s, i) => (
+          <li class="lab-tool" data-lab-tool={i}>
+            <span class="lab-tool-n">{s.n}</span>
+            <span class="lab-tool-h">{s.h}</span>
+          </li>
+        ))}
+      </ul>
+    </aside>
+
+    <div class="lab-stage">
+      <span class="lab-grid" aria-hidden="true"></span>
+      <svg class="lab-wire" viewBox="-120 -120 240 240" aria-hidden="true">
+        <g data-lab-wire></g>
+      </svg>
+      <span class="lab-shadow" aria-hidden="true"></span>
+      <div class="lab-read">
+        <span class="lab-lbl">Rotation</span>
+        <p class="lab-deg" data-lab-deg>0°</p>
+      </div>
+    </div>
+
+    <aside class="lab-panel">
+      <p class="lab-lbl">Deliverables</p>
+      <ul class="lab-tiles">
+        {[0, 1, 2].map(i => (
+          <li class="lab-tile" data-lab-tile={i}>
+            <span class="lab-tile-i" aria-hidden="true"></span>
+            <span class="lab-tile-t"></span>
+          </li>
+        ))}
+      </ul>
+      <!-- THE TIMELINE.
+
+           A 2px line with a fill on it was a loading bar wearing a label — it
+           measured the section without belonging to it. This is the strip every
+           3D and animation tool puts along its bottom edge: a track, a keyframe
+           per stage, and a playhead riding the scrub. It says the same number
+           and it says it in the section's own language, which is the difference
+           between a progress bar and an instrument.
+
+           The keys fill as the playhead passes them, so the strip carries a
+           history as well as a position — where you are, and what you have
+           already been through. -->
+      <p class="lab-lbl">Timeline</p>
+      <div class="lab-time" aria-hidden="true">
+        <span class="lab-time-rail"></span>
+        <span class="lab-time-fill" data-lab-bar></span>
+        {STAGES.map((s, i) => (
+          <span class="lab-key" data-lab-key={i}
+                style={`--at:${((i + 0.5) / STAGES.length) * 100}%`}></span>
+        ))}
+        <span class="lab-play" data-lab-play></span>
+      </div>
+      <p class="lab-time-read">
+        <span data-lab-count>01</span><span class="lab-time-of"> / 05</span>
+        <span class="lab-time-pct" data-lab-pct>0%</span>
+      </p>
+    </aside>
+  </div>
+
+</section>

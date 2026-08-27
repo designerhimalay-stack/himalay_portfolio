@@ -8,3 +8,9 @@
 site/node_modules/
 site/dist/
 site/.astro/
+
+# verification captures. 152 files / 14MB of browser screenshots taken while
+# checking scroll positions, viewport sizes and seams — throwaway QA output, not
+# design references. The reasoning they were taken to prove is in the code
+# comments and in docs/research/components/*.spec.md, which is what belongs here.
+docs/design-references/kora/

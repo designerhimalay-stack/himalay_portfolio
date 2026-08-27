@@ -1,0 +1,85 @@
+---
+import { existsSync } from 'node:fs';
+
+/* The fan of four — act two of section three.
+
+   Cloned from horizonx.so's hero. The measurements are in
+   docs/research/components/horizonx-fan.spec.md; the one that matters is that
+   THE FAN IS STATIC. Their cards never move — identical at every scroll
+   position — and the entire animation is a single fade+scale on the rig that
+   holds them. One transform on one element, not five staggered ones. That
+   restraint is why it reads as a photograph being placed rather than a UI
+   assembling itself, and it is the part worth cloning.
+
+   Their five cards are hand-placed and irregular (rotation steps of
+   7.04 / 5.28 / 7.92 / 7.92), so four of them cannot be derived by halving.
+   Ours comes off a curve instead, with u = (i - 1.5)/1.5 across the four:
+
+       rot = 13u        -13.00  -4.33  +4.33  +13.00
+       tx  = 372u      -372.0  -124.0  +124.0  +372.0
+       ty  = -6 + 52u²   +46.0    -0.2    -0.2   +46.0
+
+   ty is the arc, and its sign is the detail people miss: the INNER cards sit
+   highest and the outer pair lowest, which is what makes a fan look held rather
+   than propped in a row.
+
+   Cards are 260x350 rather than their 240x320 because ours carry a sticker and
+   a caption instead of a photograph. The overlap is kept to ~12px for the same
+   reason — in a fan, anything on a covered strip is simply lost, so the copy
+   has to live where nothing lands on top of it.
+
+   Black is kept from the previous pass, and for the same reason: every die-cut
+   sticker carries a white contour, which vanishes on a white card and becomes
+   the whole effect on this one.
+
+   Sticker widths are the optical-area match with a DENSITY correction on top.
+   Area alone put iTAP at 84 and it still read heavier than the rest, because it
+   is a solid filled disc where World Bank and canvia are thin outlines carrying
+   a lot of internal white. iTAP comes down, World Bank goes up; the boxes stop
+   being equal so that the marks start looking it. */
+
+const FAN = [
+  { id:'stanford',  alt:'Stanford University', w:150, kind:'Research platform',
+    line:'The app researchers run studies on.' },
+  { id:'worldbank', alt:'The World Bank', w:184, kind:'National programme',
+    line:'Designed end to end for Indonesia.' },
+  { id:'itap',      alt:'iTAP', w:76, kind:'OTT streaming',
+    line:'Mobile screens for the platform.' },
+  { id:'canvia',    alt:'canvia', w:178, kind:'Product design',
+    line:'Built with their design team.' },
+].filter(c => existsSync(`public/assets/brands/${c.id}.png`));
+
+/* the same curve, resolved at build time so the markup carries the geometry */
+const pose = (i, n) => {
+  const u = (i - (n - 1) / 2) / ((n - 1) / 2);
+  return { rot: +(13 * u).toFixed(2), tx: +(372 * u).toFixed(1), ty: +(-6 + 52 * u * u).toFixed(1) };
+};
+---
+<div class="fan" data-fan>
+  <h3 class="fan-head">Where the work landed.</h3>
+
+  <div class="fan-rig" data-fan-rig>
+    {FAN.map((c, i) => {
+      const p = pose(i, FAN.length);
+      return (
+        <article
+          class="fan-card"
+          data-card={c.id}
+          style={`--rot:${p.rot}deg;--tx:${p.tx}px;--ty:${p.ty}px;z-index:${i + 1}`}
+        >
+          <div class="fan-logo">
+            <img src={`/assets/brands/${c.id}.png`} alt={c.alt} style={`width:${c.w}px`}
+                 loading="lazy" decoding="async" />
+          </div>
+          <p class="fan-kind">{c.kind}</p>
+          <p class="fan-line">{c.line}</p>
+        </article>
+      );
+    })}
+  </div>
+
+  <p class="fan-body">
+    Research tools, national programmes and streaming apps — designed end to end,
+    and shipped on both stores.
+  </p>
+</div>

@@ -1,0 +1,54 @@
+---
+import Cards from './Cards.astro';
+/* The pinned fly-apart headline.
+
+   Cloned from kora.framer.media (Framer's "Inside Container" > "Text /
+   Comparison Cards"). The full extraction — the 24-position scrub, the
+   breakpoint table, the type ramp — is in
+   docs/research/components/kora-changes.spec.md.
+
+   The headline is TWO BLOCKS, not split text, because that is what the original
+   is: the break falls after "when", and the two halves leave in opposite
+   directions. Splitting a single line per-word would have made the mechanism
+   harder, not easier — there is no per-glyph stagger here to earn it back.
+
+   It is a departure, not an arrival. The line rests centred and readable, and
+   scrolling pushes it away from the camera and off both edges. Getting that
+   backwards is the one thing that would make this read as a different section.
+
+   The <span> break is inside the first half on purpose: "when" is already grey
+   while it is still on line one, so the colour change and the line break happen
+   at different words. That mismatch is the detail that makes the two-tone read
+   as deliberate rather than as a line-by-line fade. */
+/* The claim, then the evidence.
+
+   THE ASTERISK IS THE PIVOT, and that is not decoration. The loader already sets
+   a mark beside its word (.ld-ast), and section two's curved sentence turns on a
+   '*' between its two clauses. Using it a third time here, at the exact point
+   where the two halves fly apart, makes it a system instead of a coincidence —
+   the mark means "and here is the turn" every time it appears on this site.
+
+   The sentence is built for the split: the count goes left, the qualifier goes
+   right, and the mark sits on the seam between them. It also earns its keep as
+   copy — four cards follow, and "one pair of hands" is the claim section two's
+   sentence already makes ("I do both, in order") without ever boasting.
+
+   Colour is --ink, the loader's black, for the whole line. Kora's two-tone grey
+   was carrying its contrast; here the motion does that, so the type can stay
+   undivided and let the one mark do the work. */
+const A = 'Four teams';
+const B = 'one pair of hands.';
+---
+<section class="chg" data-changes>
+  <div class="chg-pin">
+    <div class="chg-text">
+      <div class="chg-half" data-chg-half="l">
+        <h2 class="chg-h">{A}<span class="chg-ast" aria-hidden="true">*</span></h2>
+      </div>
+      <div class="chg-half" data-chg-half="r">
+        <h2 class="chg-h">{B}</h2>
+      </div>
+    </div>
+    <Cards />
+  </div>
+</section>

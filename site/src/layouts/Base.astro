@@ -9,14 +9,23 @@ const { title, description } = Astro.props;
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <!-- the js gate must land before first paint, or the hero flashes open then closes -->
-  <script is:inline>document.documentElement.className += " js"</script>
+  <!-- the js gate must land before first paint, or the hero flashes open then closes.
+       scrollRestoration has to be turned off in the same breath: the browser's default
+       is to remember where a tab was scrolled and put a RELOAD back there, not just a
+       back/forward nav. Section three is now long enough that a reload after scrolling
+       into it lands the visitor on "[ Why blink? ]" instead of the hero — confirmed by
+       reloading mid-scroll and reading scrollY back, not guessed. 'manual' only turns
+       off that auto-restore; it does not touch a real #hash link landing on load. -->
+  <script is:inline>
+    document.documentElement.className += " js";
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  </script>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>{title}</title>
   <meta name="description" content={description} />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Inter:wght@400;500;700&family=Geist+Mono:wght@400&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" />
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png" />
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
@@ -40,11 +49,12 @@ const { title, description } = Astro.props;
     import '../scripts/hero-dots.js';
     import '../scripts/stepped.js';
     import '../scripts/parallax.js';
+    import '../scripts/hash-journey.js';
     import '../scripts/textpath.js';
     import '../scripts/text-on-path.js';
+    import '../scripts/dial.js';
+    import '../scripts/lab.js';
     import '../scripts/orbit.js';
-    import '../scripts/why.js';
-    import '../scripts/why-viz.js';
     import '../scripts/app.js';
   </script>
 </body>

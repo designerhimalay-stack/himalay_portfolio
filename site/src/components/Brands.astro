@@ -1,0 +1,55 @@
+---
+import { existsSync } from 'node:fs';
+
+/* The four die-cut stickers — the subject of section three.
+
+   These are the paper stickers built earlier (alpha-dilated white contour, soft
+   contact shadow), laid out on the same surface the tags are scattered on. The
+   tags frame; these are what the section is actually about.
+
+   SIZED BY OPTICAL AREA, NOT BY WIDTH. Their aspect ratios run from 0.81 (iTAP,
+   portrait) to 3.30 (canvia, a long wordmark). Matching widths would leave iTAP
+   looking like a postage stamp beside World Bank, and matching heights would
+   make canvia enormous. Setting each so that sqrt(w x h) is constant is what
+   makes four differently-shaped marks read as equals — the standard fix for a
+   logo lockup, and the reason these four sit together without one shouting.
+
+   Area alone is not quite enough, though. World Bank and canvia are thin-stroked
+   marks carrying a lot of internal white, so at equal box area they read SMALLER
+   than Stanford's solid serif block and iTAP's filled disc — visible in the first
+   pass, where World Bank looked like the runt of the four. Each therefore carries
+   an optical-weight multiplier on top of the area match: 1.10 for World Bank,
+   1.05 for canvia, 1.00 for the two solid marks. Boxes are no longer equal; the
+   way they LOOK is, which is the only thing that matters here.
+
+   Widths below are that calculation at an optical size of 176:
+     stanford  2.58 x1.00 -> 283x110    worldbank 3.00 x1.10 -> 335x112
+     itap      0.81 x1.00 -> 158x195    canvia    3.30 x1.05 -> 336x102
+
+   The existsSync guard is deliberate: a missing file here used to ship a broken
+   <img> and a console 404 rather than simply nothing. */
+
+/* The scatter is tighter than the first pass. At the old spread the four sat in
+   the corners of the frame with ~300px of white between them and read as four
+   separate things rather than one group of collaborators. */
+const BRANDS = [
+  { id:'stanford',  alt:'Stanford University', w:283, dx:-248, dy:-86, rot:-3 },
+  { id:'worldbank', alt:'The World Bank',      w:335, dx: 208, dy:-98, rot: 4 },
+  { id:'itap',      alt:'iTAP',                w:158, dx:-186, dy: 96, rot: 5 },
+  { id:'canvia',    alt:'canvia',              w:336, dx: 172, dy: 88, rot:-4 },
+].filter(b => existsSync(`public/assets/brands/${b.id}.png`));
+---
+<div class="brands" data-brands>
+  {BRANDS.map((b, i) => (
+    <figure
+      class="brand"
+      data-brand
+      data-dx={b.dx}
+      data-dy={b.dy}
+      data-rot={b.rot}
+      style={`--w:${b.w}px;z-index:${i + 1}`}
+    >
+      <img src={`/assets/brands/${b.id}.png`} alt={b.alt} width={b.w} loading="lazy" decoding="async" />
+    </figure>
+  ))}
+</div>

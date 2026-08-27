@@ -2,12 +2,14 @@
 :root{
   --bg:#F6F6F9; --ink:#131316; --muted:#70728F; --muted-2:#9193AC;
   --line:#E3E4E8; --line-2:#BDBEC7; --accent:#1EF7FF;
+  /* ONE family, everywhere. Instrument Sans is the face the loader sets, and the
+     loader is the first thing anyone sees — running a second family for body copy
+     underneath it meant the page introduced itself in one voice and then spoke in
+     another. --f-body is kept as an alias rather than deleted so the handful of
+     rules that ask for "body type" still read as intent rather than as a token
+     that only happens to resolve the same. */
   --f-ui:"Instrument Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  --f-body:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  /* Geist Mono stands in for the reference's Aeonik Mono Pro, which is licensed
-     and not ours to ship. Same neo-grotesque skeleton, same unslashed zero, same
-     flat terminals — swap the first name here if the real face is ever bought. */
-  --f-mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --f-body:var(--f-ui);
   --ease-out:cubic-bezier(.16,1,.3,1);
   --spring:cubic-bezier(.34,1.4,.5,1);
   --pad:40px; --maxw:1360px;
@@ -34,8 +36,10 @@ h1{margin:0}
    shifting it in .d1hot's absolute context but not in .d1's normal flow, which
    is the divergence that rendered the headline doubled once before. */
 .d1 .ln{display:flow-root;white-space:nowrap}
-/* the display tracking is tight enough to collide with the ampersand */
-.d1 .amp{letter-spacing:0;padding:0 .05em}
+/* the display tracking is tight enough to collide with the ampersand — and with
+   the solidus in "ui/ux", which at -.07em sits hard against the letters either
+   side of it and reads as one smeared glyph */
+.d1 .amp,.d1 .sl{letter-spacing:0;padding:0 .05em}
 
 /* halftone fill — the site's signature effect */
 /* the halftone lives on the element that carries the text, not on the h1.
@@ -44,7 +48,13 @@ h1{margin:0}
    the dots wash out. Painting it on .ln-i keeps the clip and the glyphs in one
    paint context, and the dots then travel with the line as it comes up behind
    its mask, which is what a printed line should do.
-   .d1 .ln-i catches the hover clones too; --dot resolves per context. */
+   .d1 .ln-i catches the hover clones too; --dot resolves per context.
+
+   A solid fill replaced this for one build, on the argument that a headline
+   carrying a name has to be read letter by letter rather than taken in as a
+   shape. It is back, and the note is left here so the case does not get made
+   twice: the dots ARE the hero. --dot is what both versions colour, so the
+   swap is one declaration either way if it ever comes up again. */
 .dotted{--dot:#131316}
 .d1 .ln-i{
   /* the reference screens at 3px, but its type is 168px against our 107px, so
@@ -114,7 +124,7 @@ h1{margin:0}
   pointer-events:auto;
 }
 .mark{font-family:var(--f-ui);font-weight:700;font-size:20px;letter-spacing:-.05em;
-  padding-left:8px}
+  padding-left:8px;color:var(--ink)}
 .links{display:flex;align-items:center;gap:8px}
 
 /* hover, measured frame-by-frame off the reference: three arms pivot about the
@@ -189,10 +199,17 @@ h1{margin:0}
    arrives. */
 #hashgl{
   position:fixed;left:50%;
-  transform:translateX(-50%) translate3d(0,var(--par,0px),0);
-  top:0;
-  height:100vh;
-  width:min(50vw,620px);
+  /* --hx is hash-journey.js's travel across section three; --par is parallax.js's
+     hero glide. Two authors, one transform, neither reading the other's var. */
+  transform:translateX(-50%) translate3d(var(--hx,0px),var(--par,0px),0);
+  /* The box is bigger than the hero needs because section three grows the hash to
+     zoom 1.40, where it renders about 630x770 and the old min(50vw,620px)x100vh
+     sheared its refraction off at the sides. -16vh/132vh keeps the box's centre at
+     50vh, so "centred in the viewport is offset 0" still holds and parallax.js's
+     anchor is untouched. The extra fragments are paid for by HashGL.quality(). */
+  top:-16vh;
+  height:132vh;
+  width:min(72vw,900px);
   z-index:3;                     /* hash paints over the headline */
   display:block;background:transparent;   /* no backdrop, no shadow */
 }
@@ -302,7 +319,7 @@ html.js .bar.is-in{opacity:1;transform:none}
    is invisible once the hash is small enough to fit. */
 /* the intro still needs the full width, but not at the cost of the offset —
    dropping the transform here would snap the hash to the viewport top */
-html.intro #hashgl{width:100vw;left:0;transform:translate3d(0,var(--par,0px),0)}
+html.intro #hashgl{width:100vw;left:0;transform:translate3d(var(--hx,0px),var(--par,0px),0)}
 
 @media (prefers-reduced-motion:reduce){
   html.js .d1 > .ln{clip-path:none}
@@ -542,158 +559,513 @@ html.mk-on .mk i{color:transparent}
   font-size:clamp(22px,2.6vw,40px);line-height:1.3;letter-spacing:-.02em;
   color:var(--tp-fg);max-width:22ch}
 
-/* ============================================================================
-   section four — the pinned four-card wipe
-   Cloned from blink.trade's "[ Why blink? ]" block; every number below was read
-   off the live site rather than guessed (docs/research/components/pinned-wipe.spec.md).
+/* ============ the dial — section two (cloned: labs.anyflow.agency) ============
+   Their section is 1332px at a 900 viewport — 1.48vh — so this is 150vh, and
+   the stage inside it is exactly one viewport. That matters: the ring is
+   centred in the stage, so raising the stage past viewport centre is what
+   carries the ring up to the fixed hash. The approach is pure layout; dial.js
+   only joins in once they have met.
 
-   The whole mechanic is ONE value. Over the pinned range each viewport-height of
-   scroll advances s by 1, the rail slides 50% per unit of s, and every panel's
-   vertical travel is two clamps of the same s. why.js writes --tx and --ty; this
-   sheet does the rest.
-   ========================================================================== */
-.why{
-  /* the reference's warm paper, kept whole: the section is a transplant and
-     half-translating the palette would leave it neither its own nor ours */
-  --why-paper:#edeceb;      /* the card side */
-  --why-board:#dcd9d5;      /* the track behind the pin; the pin covers it at every scroll position */
-  --why-ink:#272424;
-  --why-rule:#b2ada7;
-  --why-hot:#cc7245;        /* sampled off the reference's own pixels */
-  --why-cool:#8a9a5b;
+   No background of its own. The hash canvas is fixed behind everything at
+   z-index 3, and this section sits over it at 4 — a paper here would hide the
+   very object the ring is rising to meet. */
+/* 170vh, not their 148. Their headline block and stage are the same shape, but
+   at 150 the headline had only ~150px of scroll before the ring reached centre
+   and swept it off the top — it was gone almost before it could be read. The
+   extra height is lead-in, not a change to the mechanism: the meeting still
+   happens the instant the stage's centre crosses the viewport's. */
+.dial{position:relative;z-index:2;height:200vh;
+  /* the removed header supplied this lead as its own top padding. The ring must
+     still begin BELOW the mark or it rises away from the hash instead of toward
+     it, so the lead moves here rather than leaving with the header. */
+  padding-top:26vh;
+  /* the resting edges: one weight, quiet but actually present on our ground */
+  --dial-rest:color-mix(in srgb,var(--ink),transparent 78%);
+  /* the centre rule deliberately overruns both edges (theirs is 150vw at -10%),
+     so the section has to clip it or it widens the document. Their section
+     carries overflow-clip for the same reason. clip, not hidden: hidden would
+     make this a scroll container and break the sticky machinery downstream. */
+  overflow-x:clip;
+  /* VIEWPORT-RELATIVE, and it has to be.
 
-  /* their fluid scale verbatim: min at a 375px viewport, max at 1600px, and
-     100vw (scrollbar included) is what they interpolate against — matching that
-     is what makes 117.03px come out at 117.03px and not 116.5px */
-  --why-fluid:calc((100vw - 375px) / 1225);
-  --t-title:clamp(18px, calc(18px + 4 * var(--why-fluid)), 22px);
-  --t-figure:clamp(64px, calc(64px + 61 * var(--why-fluid)), 125px);
-  --t-unit:clamp(36px, calc(36px + 28 * var(--why-fluid)), 64px);
-  --t-body:clamp(15px, calc(15px + 1 * var(--why-fluid)), 16px);
-  --t-label:clamp(13px, calc(13px + 1 * var(--why-fluid)), 14px);
+     264px was measured off their 900-tall window and then frozen. #hashgl is
+     `height:132vh`, so the hash's rendered size scales with the viewport while
+     this did not — on a 1440-tall screen the mark grew 1.6x and the ring stayed
+     put, which is why the seated hash overflowed the dial there and fit fine on
+     a laptop. Both ends now key off vh, so the proportion between them is a
+     constant at every screen instead of a coincidence at one.
 
+     The vw arm is the guard for short, wide windows, where 32vh alone would let
+     the ring crowd the statement flanking it. 32vh also sets the ceiling: the
+     dial ARRIVES at 1.45 (see SWELL), so 32 x 2 x 1.45 = 93% of the height at
+     its widest. That is deliberately close to full — the swell lasts an instant
+     and the ring is bare glass while it happens, so the near-miss with the
+     edges reads as scale rather than as an overflow. At rest it settles to
+     64vh, which is the size the section was asked for. */
+  --ring:min(32vh,24vw);
+}
+/* The statement that flanks the dial. It sizes to the gap either side of the
+   ring rather than to the viewport, so it can never crowd the circle. */
+.dial-say{position:absolute;inset:0;pointer-events:none;z-index:1}
+.dial-say-h{
+  position:absolute;top:50%;margin:0;
+  font-family:var(--f-ui);font-weight:600;
+  font-size:clamp(19px,2.5vw,36px);line-height:1.1;letter-spacing:-.038em;
+  color:var(--ink);
+  max-width:min(26vw,320px);
+  will-change:transform,opacity;opacity:0;
+}
+/* flush to the ring on both sides, sitting on its centre line */
+.dial-say-h[data-say="l"]{right:calc(50% + var(--ring) + 56px);text-align:right}
+.dial-say-h[data-say="r"]{left:calc(50% + var(--ring) + 56px);text-align:left}
+
+/* THE DWELL — the stage holds once the mark is seated in it.
+
+   sticky top:0 is not an arbitrary choice of anchor: the stage is exactly one
+   viewport and the ring is centred in it, so "stage top at 0" IS the frame the
+   ring's centre crosses the viewport's — the meeting. Sticky therefore engages
+   on precisely the beat the two objects meet, with no number to keep in sync.
+
+   The section is 200vh: 26vh of lead, one viewport of stage, and the 74vh left
+   over is what sticky absorbs. That is the hold — the hash sits inside the dial
+   while the page keeps scrolling, and the whole post-meeting sequence (the
+   spin-up, the ripple draining, the wedge) now plays out while the dial is
+   still on screen. It used to fire at d/vh = 1.02, a full viewport ABOVE the
+   mark, which is to say never visibly at all.
+
+   clip, not hidden, on the parent above — hidden would make .dial a scroll
+   container and this sticky would have nothing to stick to. */
+.dial-stage{position:sticky;top:0;height:100vh;display:grid;place-items:center}
+
+/* The dial face, cloned from thewatch.60fps.fr's HERO. Every number measured:
+   the outer circle at stroke-opacity .1, the wedge at fill-opacity .07, the
+   bounding radii at .1, and the segment edges at stroke-width 3 in their own
+   colours. The second svg (#919191) is the "cut" layer — a ring and four
+   diameters, all broken by dash gaps so eight lines through one centre read as
+   spokes rather than as a pie chart. */
+.dial-ring{
   position:relative;
-  /* the hero's fixed hash canvas paints at z-index 3 and would otherwise show
-     straight through this section's paper */
-  z-index:4;
-  /* one step per gap between panels; the pin is released exactly as the last
-     step finishes, which is why the travel needs no separate hold */
-  height:calc(var(--steps) * 100svh);
-  background:var(--why-board);
-  color:var(--why-ink);
+  width:calc(var(--ring) * 2);height:calc(var(--ring) * 2);
+  will-change:transform;
 }
-.why-pin{position:sticky;top:0;display:flex;flex-direction:column;
-  height:100svh;overflow:hidden;background:var(--why-paper)}
+.dial-face{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 
-.why-head{display:flex;align-items:center;justify-content:center;padding:96px 0;flex:none}
-.why-eyebrow{margin:0;font-family:var(--f-mono);font-weight:400;
-  font-size:var(--t-label);line-height:1;letter-spacing:.01em;text-transform:uppercase;
-  color:color-mix(in srgb,var(--why-ink) 65%,transparent)}
+/* The glass, and its light.
 
-.why-stage{position:relative;flex:1;min-height:0;overflow:hidden}
-/* inset by 1px a side so the outermost panel's 1px outline is not clipped away
-   by the stage's own overflow:hidden */
-.why-rail{position:absolute;inset:0 1px;transform:translateX(var(--tx,0%));
-  will-change:transform}
+   Two separate things make this read as a surface rather than a white circle.
+   The HOTSPOT is a radial highlight parked at --gx/--gy, which dial.js drives
+   from the pointer, so the bright spot slides across the face as you move — the
+   way a highlight behaves on anything curved. The RIM is a conic sweep at
+   --shine, driven from the dial's own rotation, so the lit edge travels as the
+   object turns. Light that holds still while the thing beneath it rotates is
+   the clearest tell that a "glass" surface is only painted on. */
+.dial-glass{
+  position:absolute;inset:0;border-radius:50%;
+  background:
+    radial-gradient(circle at var(--gx,38%) var(--gy,30%),
+      rgba(255,255,255,.92) 0%,
+      rgba(255,255,255,.44) 30%,
+      rgba(255,255,255,.09) 62%,
+      rgba(255,255,255,0) 100%);
+  backdrop-filter:blur(7px) saturate(1.08);
+  -webkit-backdrop-filter:blur(7px) saturate(1.08);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),
+             inset 0 -20px 46px -26px rgba(20,22,32,.20);
+  pointer-events:none;
+}
+/* the travelling rim light. padding + mask-composite leaves only the 1px band,
+   so the conic gradient lights the EDGE instead of washing the whole disc. */
+.dial-glass::after{
+  content:"";position:absolute;inset:0;border-radius:50%;padding:1px;
+  background:conic-gradient(from var(--shine,0deg),
+    rgba(255,255,255,0) 0deg,
+    rgba(255,255,255,.95) 38deg,
+    rgba(255,255,255,0) 112deg,
+    rgba(255,255,255,0) 248deg,
+    rgba(255,255,255,.55) 302deg,
+    rgba(255,255,255,0) 360deg);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  mask-composite:exclude;
+  pointer-events:none;
+}
+.dial-seg[data-dial-seg="track"]{transform-origin:50% 50%}
 
-/* +1px on the width so two neighbouring panels overlap by exactly one pixel and
-   their inset outlines stack into a single hairline instead of doubling up */
-.why-panel{position:absolute;top:0;height:100%;width:calc(50% + 1px);
-  left:calc(var(--i) * 50%);transform:translateY(var(--ty,0%));will-change:transform}
+/* The ripple train. Each ring's own --p (0..1, its distance out from the centre)
+   and the shared --a (how energetic the surface is) are both written by dial.js,
+   because the phase wraps and CSS has no modulo. Keeping the wrap in JS also
+   means one number describes the whole train rather than four hand-offset rules.
 
-.why-card{position:relative;display:flex;height:100%;
-  outline:1px solid var(--why-rule);outline-offset:-1px;
-  border-bottom:1px solid var(--why-rule)}
-
-.why-copy{position:relative;z-index:1;display:flex;flex:1;min-width:0;
-  flex-direction:column;justify-content:space-between;gap:64px;
-  max-width:450px;padding:64px}
-/* every other card flips heading and figure. Without it four cards in a row read
-   as one template repeated; with it, the pair on screen always reads as a spread */
-.why-panel:nth-child(even) .why-copy{flex-direction:column-reverse}
-
-.why-copy-head{display:flex;flex-direction:column;gap:16px}
-.why-title{margin:0;font-family:var(--f-mono);font-weight:400;
-  font-size:var(--t-title);line-height:1.2;letter-spacing:.01em;text-transform:uppercase}
-.why-body{margin:0;font-size:var(--t-body);line-height:1.3;
-  color:color-mix(in srgb,var(--why-ink) 65%,transparent)}
-
-.why-stat{margin:0;display:flex;align-items:flex-end;gap:12px;font-family:var(--f-mono)}
-.why-figure{font-size:var(--t-figure);line-height:1;letter-spacing:-.02em}
-/* .15em of padding, not a margin: the unit sits on the figure's baseline by eye,
-   and eye means a fraction of the unit's own size, not a fixed nudge */
-.why-unit{display:block;font-size:var(--t-unit);line-height:1;letter-spacing:-.02em;
-  padding-bottom:.15em;color:color-mix(in srgb,var(--why-ink) 40%,transparent)}
-
-/* 1:2 — the artwork bay is always half as wide as the card is tall, so the
-   canvas geometry (a 250px radius against a 694px height) holds at every size */
-/* no background of its own: measuring the reference showed the artwork bay and
-   the copy side reading the identical (215,214,213), so the bay is the same
-   paper and the tonal step across the card is only the rule field and the grain */
-.why-viz{position:absolute;inset-block:0;right:0;aspect-ratio:1 / 2;max-width:100%;
-  overflow:hidden;isolation:isolate}
-.why-viz canvas{display:block;width:100%;height:100%;
-  opacity:0;transition:opacity .2s var(--ease-out)}
-.why-viz canvas.on{opacity:1}
-
-/* ---- split-text reveal ----
-   The reference tweens nothing: each fragment holds at 8px down and clear, then
-   SNAPS to place 100ms after the one before it. Read as a bug at first; it is
-   the effect — the copy assembles like a terminal filling in, which is the whole
-   register of the section. A tween here would soften it into every other site. */
-.why [data-split] .w,
-.why [data-split] .c{display:inline-block}
-.why [data-split] .l{display:block}
-.why [data-split] .w,
-.why [data-split] .c,
-.why [data-split] .l{opacity:0;transform:translateY(8px)}
-.why [data-split] .in{opacity:1;transform:none}
-/* before why.js has split anything, and if it never runs, the copy is just copy */
-.why-split-off [data-split] .w,
-.why-split-off [data-split] .c,
-.why-split-off [data-split] .l{opacity:1;transform:none}
-
-/* ---- grain ----
-   300% of the box, shifted in ten discrete steps. Steps, not a tween: a sliding
-   grain reads as a moving texture, a stepping one reads as film. */
-.why-grain{position:absolute;inset:0;z-index:3;overflow:hidden;pointer-events:none}
-.why-grain i{position:absolute;top:-100%;left:-100%;width:300%;height:300%;
-  background:url(/assets/img/grain.png) repeat;opacity:.2;
-  animation:why-grain 8s steps(10) infinite}
-@keyframes why-grain{
-  0%{transform:translate(0,0)}      10%{transform:translate(-5%,-10%)}
-  20%{transform:translate(-15%,-20%)} 30%{transform:translate(-5%,-10%)}
-  40%{transform:translate(-15%,-20%)} 50%{transform:translate(-5%,-10%)}
-  60%{transform:translate(-15%,-20%)} 70%{transform:translate(-5%,-10%)}
-  80%{transform:translate(-15%,-20%)} 90%{transform:translate(-5%,-10%)}
-  100%{transform:translate(0,0)}
+   Thin, and fading with distance — a real ripple loses energy as it spreads, and
+   a ring that stays equally bright to the rim reads as a scanning effect. */
+.dial-wave{position:absolute;inset:0;pointer-events:none}
+.dial-wave i{
+  position:absolute;inset:0;border-radius:50%;
+  border:1.5px solid color-mix(in srgb,var(--ink),transparent 22%);
+  transform:scale(var(--p,0));
+  /* the min() keeps a ring invisible for the instant it re-enters at the centre,
+     so the wrap never shows as a flash */
+  opacity:calc(var(--a,0) * (1 - var(--p,0)) * min(var(--p,0) * 7, 1) * .42);
 }
 
-/* ---- stacked ----
-   Below the reference's lg breakpoint the pin, the rail and the wipe all come
-   off and the four cards are simply four cards. The horizontal mechanic needs a
-   spare half-viewport to slide into; a phone has none, so there is nothing to
-   translate and faking it would only cost the reader the copy. */
-@media (max-width:1023.98px){
-  .why{height:auto}
-  .why-pin{position:static;height:auto;overflow:visible}
-  .why-head{padding:64px 0}
-  .why-stage{overflow:visible}
-  .why-rail{position:static;inset:auto;transform:none;display:flex;flex-direction:column}
-  .why-panel{position:static;width:auto;left:auto;transform:none;z-index:auto!important}
-  .why-card{height:auto;min-height:min(72vh,430px)}
-  .why-copy{max-width:220px;padding:32px 0 32px 32px;flex-direction:column}
-  .why-panel:nth-child(even) .why-copy{flex-direction:column}
-  .why-grain{position:fixed}
-}
+/* The wedge waits for the wave. It is the last thing to arrive, so the sequence
+   reads as one event resolving rather than several starting at once. */
 
+
+.dial-face{color:var(--ink)}
+.dial-outer{fill:none;stroke:currentColor;stroke-opacity:.1;stroke-width:1}
+/* only the selected segment is filled — the other three carry their edge alone */
+.dial-wedge{fill:currentColor;fill-opacity:.07;opacity:0}
+/* the wedge is the LAST beat: it waits for the ripple to reach the rim, so the
+   sequence resolves one thing at a time instead of arriving all at once */
+.dial-seg.is-selected .dial-wedge{opacity:var(--wedge,0)}
+
+/* the one moving thing on the face */
+.dial-edge{fill:none;stroke:var(--ink);stroke-width:3;stroke-linecap:butt}
+
+/* the cut layer. r=345 -> circumference 2168; 472 on / 70 off puts four gaps on
+   the cardinals, and the diameters (690 long) are cut 250/190/250 so the middle
+   is missing and only the arms near the rim survive. */
+
+
+/* the stage rules — a horizontal line across the centre and a vertical one down
+   the section, both hairlines */
+.dial-rule{position:absolute;background:color-mix(in srgb,var(--ink),transparent 88%);
+  pointer-events:none}
+.dial-rule--h{left:-10%;width:120%;height:1px;top:50%}
+.dial-rule--v{top:0;height:100%;width:1px;left:50%}
+
+/* Labels sit at fixed angles and do NOT orbit — theirs held -88.5 / 0 / +88.5
+   at every sample. The counter-rotation on the inner span is what keeps each
+   one upright while its arm is rotated into place. */
+/* THE WORDS, ENGRAVED ON THE RIM.
+
+   They live inside the face's viewBox, and that is the structural win: they
+   scale with the dial for free, so the overflow the old absolutely-positioned
+   labels hit at 390px cannot happen — there is no responsive handling below
+   because none is needed. They also turn with the dial when it rotates, which
+   is what engraving on a bezel does.
+
+   The reveal is a rotation about the dial's own centre, not a fade: each word
+   slides a few degrees ALONG its arc into place. Movement along the rim is the
+   only direction that looks native to a circle — a fade has no direction, and a
+   linear slide would visibly leave the path. */
+.dial-word{
+  --t:0;
+  fill:var(--ink);
+  font-family:var(--f-ui);font-size:19px;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;
+  /* Reveal only. The words carried a glow as the ripple passed them and dimmed
+     to 34% for all but the one nearest the marker — both are gone. Engraving
+     does not light up, and two kinds of emphasis competing on four small words
+     read as noise rather than as attention. They arrive, and then they simply
+     stay. */
+  opacity:var(--t);
+  transform-box:view-box;transform-origin:350px 350px;
+  transform:rotate(calc((1 - var(--t)) * -6deg));
+}
+.dial-word text{text-anchor:middle}
+
+
+@media (max-width:900px){
+  /* The mark sits at 82vh here, not 50vh (#hashgl is retuned for the hero on
+     small screens). With only 14vh of lead the ring's resting position was
+     already ABOVE it — measured starting at y630 against a mark at y692 — so it
+     rose away from the hash instead of toward it and the two never met. The
+     lead has to put the ring below the mark before the climb starts. */
+  .dial{height:158vh;--ring:32vw;padding-top:34vh}
+  /* no room to flank a 30vw ring on a phone: the halves sit above and below it
+     instead, still arriving from their own sides */
+  /* Centred with auto margins, NOT left:50%. The transform on these is written
+     wholesale by dial.js for the fly-in, so a translateX(-50%) here would be
+     overwritten every frame — left:50% alone pushed both halves a full
+     half-width to the right. Auto margins centre without touching transform. */
+  /* The left/right rules MUST carry the [data-say] attribute here. The
+     full-width layout sets left/right on .dial-say-h[data-say=...] — a more
+     specific selector than the bare class — so overriding on the class alone
+     lost, and the right half stayed pinned at 50% + ring and ran clean off a
+     390px screen. Matching specificity is the fix, not !important.
+
+     Centred with auto margins rather than translateX(-50%), because dial.js
+     writes the whole transform each frame for the fly-in and would overwrite it. */
+  .dial-say-h{font-size:clamp(17px,5vw,24px)}
+  .dial-say-h[data-say="l"],
+  .dial-say-h[data-say="r"]{
+    left:0;right:0;margin-inline:auto;width:min(78vw,320px);max-width:none;
+    text-align:center}
+  .dial-say-h[data-say="l"]{top:calc(50% - var(--ring) - 52px)}
+  .dial-say-h[data-say="r"]{top:calc(50% + var(--ring) + 34px)}
+  /* the engraved words need no size rule here: they are viewBox units, so they
+     shrink with the dial on their own */
+}
+/* Only the ring shrinks here now. The old rule at this width moved the labels
+   out of their orbit because at 390px the radius plus a word like PROTOTYPING
+   ran off both edges — engraving them into the viewBox removed that problem at
+   the root, so there is nothing left to work around. */
+@media (max-width:700px){
+  .dial{--ring:30vw}
+}
 @media (prefers-reduced-motion:reduce){
-  .why{height:auto}
-  .why-pin{position:static;height:auto;overflow:visible}
-  .why-stage{overflow:visible}
-  .why-rail{position:static;inset:auto;transform:none;display:flex;flex-direction:column}
-  .why-panel{position:static;width:auto;left:auto;transform:none;z-index:auto!important}
-  .why-card{height:auto;min-height:min(72vh,560px)}
-  .why-grain i{animation:none}
-  .why-viz canvas{transition:none}
+  .dial-ring{transform:none!important}
+}
+
+/* ============ the viewport — section three ============
+   The chrome of a 3D editor carrying the process stages: a tool rail, a
+   wireframe form on a shadow, a property panel, a live readout. One viewport of
+   scroll per stage, pinned, so the tool appears to be operated rather than
+   scrolled past.
+
+   It DOES carry its own paper, and that reverses what this comment used to say.
+   The hash canvas is fixed at z-index 3 and holds dead centre of the viewport
+   after section two seats it — which is the exact spot this section puts its
+   wireframe. With no fill here the two occupied the same pixels: a raymarched
+   glass slab reading straight through the form it was supposed to be behind.
+   Painting the pin closes the room, and because the pin is sticky and exactly
+   100vh, its edges only ever show while it is wiping in or out — inside the
+   pinned span the fill has no visible boundary at all. */
+.lab{position:relative;z-index:4;height:600vh}
+.lab-pin{position:sticky;top:0;height:100vh;overflow:clip;background:var(--bg);
+  display:grid;grid-template-columns:minmax(190px,1fr) minmax(0,2.1fr) minmax(190px,1fr);
+  align-items:center;gap:clamp(20px,4vw,64px);
+  padding:0 var(--pad)}
+
+/* THE SECTION HEADER.
+
+   Absolutely positioned rather than placed in the grid, because the grid's three
+   columns are all vertically centred on the object and a fourth row would push
+   the form off that centre. Anchored in vh so it holds the same distance below
+   the nav on any screen, and pointer-events:none so it can overlap the stage's
+   upper reaches without ever intercepting the cursor the dial-style hover
+   effects downstream depend on. */
+.lab-head{position:absolute;left:50%;top:11vh;translate:-50% 0;
+  width:min(94%,860px);text-align:center;pointer-events:none;z-index:2}
+/* Both lines are the same size, weight and colour — that IS the design. A
+   smaller line over a larger one reads as a kicker and a title, which is a
+   different kind of header from the one section two uses twenty feet up the
+   page. Each span is its own block so the break is authored rather than left
+   to whatever width the window happens to be. */
+.lab-h{margin:0;font-family:var(--f-ui);font-weight:600;
+  font-size:clamp(20px,2.4vw,34px);line-height:1.18;letter-spacing:-.036em;
+  color:var(--ink)}
+.lab-h span{display:block}
+
+
+.lab-lbl{margin:0 0 12px;font-family:var(--f-ui);font-size:10.5px;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--ink),transparent 62%)}
+
+/* ---- left rail ---- */
+.lab-rail{align-self:center}
+.lab-forms{display:flex;gap:10px;margin:0 0 34px;padding:0;list-style:none}
+.lab-form{width:26px;height:26px;border-radius:6px;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ink),transparent 80%);
+  position:relative;transition:box-shadow .35s var(--ease-out),background .35s var(--ease-out)}
+/* The glyph inside each swatch is now an SVG drawn per form (see Lab.astro) —
+   a triangle is not a border-radius, which is why the pyramid used to be
+   labelled with a rotated square.
+
+   currentColor throughout, so the selected state is one property: the swatch
+   flips to black and its colour to white, and every stroke and fill inside
+   follows without a second rule per shape. */
+.lab-form{color:color-mix(in srgb,var(--ink),transparent 52%);
+  display:grid;place-items:center;
+  transition:box-shadow .35s var(--ease-out),background .35s var(--ease-out),
+             color .35s var(--ease-out)}
+.lab-form svg{width:16px;height:16px;display:block;overflow:visible;
+  fill:none;stroke:currentColor;stroke-width:1.2;
+  shape-rendering:geometricPrecision}
+.lab-form.is-on{background:var(--ink);
+  box-shadow:inset 0 0 0 1px var(--ink);
+  color:rgba(255,255,255,.92)}
+
+.lab-tools{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:2px}
+.lab-tool{display:flex;align-items:baseline;gap:11px;
+  padding:9px 12px;border-radius:7px;
+  font-family:var(--f-ui);
+  transition:background .35s var(--ease-out),color .35s var(--ease-out)}
+.lab-tool-n{font-size:10.5px;font-weight:600;letter-spacing:.08em;
+  color:color-mix(in srgb,var(--ink),transparent 68%);
+  font-variant-numeric:tabular-nums;transition:color .35s var(--ease-out)}
+.lab-tool-h{font-size:15px;font-weight:500;letter-spacing:-.02em;
+  color:color-mix(in srgb,var(--ink),transparent 48%);
+  transition:color .35s var(--ease-out)}
+/* one row lit at a time — the whole point of a tool list */
+.lab-tool.is-on{background:var(--ink)}
+.lab-tool.is-on .lab-tool-h{color:#fff;font-weight:600}
+.lab-tool.is-on .lab-tool-n{color:rgba(255,255,255,.6)}
+
+/* ---- centre stage ---- */
+.lab-stage{position:relative;display:grid;place-items:center;height:100%}
+/* The ground plane, faint, so the form has something to sit on.
+
+   The translate anchors its CENTRE, not its top edge. rotateX squashes a box
+   about its own middle, so a 460px circle hung from top:58% ended up centred
+   130px BELOW the form — it ringed the rotation readout at the bottom of the
+   stage instead of sitting under the object, which read as a stray oval rather
+   than as ground. 63% with a -50% pull puts its centre on the same line as
+   .lab-shadow, and the two now describe one surface. */
+.lab-grid{position:absolute;left:50%;top:63%;translate:-50% -50%;
+  width:min(78%,460px);aspect-ratio:1;border-radius:50%;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ink),transparent 88%);
+  transform:rotateX(74deg);transform-style:preserve-3d}
+.lab-shadow{position:absolute;left:50%;top:60%;translate:-50% 0;
+  width:min(48%,270px);height:54px;border-radius:50%;
+  background:radial-gradient(ellipse at center,
+    color-mix(in srgb,var(--ink),transparent 78%) 0%,
+    transparent 70%);filter:blur(6px)}
+.lab-wire{position:relative;width:min(64%,420px);aspect-ratio:1;overflow:visible;
+  z-index:1;
+  /* the default is optimizeSpeed on transformed content, which lets a rotating
+     wireframe snap its endpoints to whole pixels and shimmer as it turns */
+  shape-rendering:geometricPrecision}
+/* stroke-width is written per edge by lab.js and is in PIXELS, not viewBox
+   units — the elements carry vector-effect:non-scaling-stroke */
+.lab-edge{stroke:var(--ink);fill:none;stroke-linecap:round}
+.lab-dot{fill:var(--ink)}
+
+.lab-read{position:absolute;left:50%;bottom:9%;translate:-50% 0;text-align:center}
+.lab-read .lab-lbl{margin-bottom:4px}
+.lab-deg{margin:0;font-family:var(--f-ui);font-size:clamp(24px,2.6vw,34px);
+  font-weight:500;letter-spacing:-.03em;color:var(--ink);
+  font-variant-numeric:tabular-nums}
+
+/* ---- right panel ---- */
+.lab-panel{align-self:center}
+.lab-tiles{margin:0 0 34px;padding:0;list-style:none;
+  display:flex;flex-direction:column;gap:8px}
+/* THE DELIVERABLES, WITH A PULSE.
+
+   Three static rows that swapped their words on a step read as a list being
+   replaced, and a list being replaced is something you scroll past. Everything
+   below makes them behave like readouts on a live instrument instead — and all
+   of it is monochrome on purpose. A colour accent would be the loudest thing on
+   a page that has spent four sections staying quiet; the attention has to come
+   from MOVEMENT, which is cheap here, and not from hue, which is not.
+
+   Three things on three different clocks, so the panel is never quite still
+   and never busy either:
+     ping    each dot sends one ring out and lets it die, 2.4s apart and a
+             third of a cycle offset per row, so the pulse travels DOWN the
+             three rather than firing at them together
+     sweep   a hairline crosses the tile once, on arrival only — the tell that
+             this row just changed rather than always having said this
+     lift    hover raises the row and opens its dot, the only beat the visitor
+             controls rather than watches */
+.lab-tile{position:relative;overflow:hidden;
+  display:flex;align-items:center;gap:10px;
+  padding:13px 14px;border-radius:9px;
+  background:rgba(255,255,255,.62);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ink),transparent 88%);
+  backdrop-filter:blur(10px);
+  transition:transform .34s var(--ease-out),box-shadow .34s var(--ease-out),
+             background .34s var(--ease-out)}
+.lab-tile:hover{transform:translateX(3px);
+  background:rgba(255,255,255,.82);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ink),transparent 74%)}
+/* the sweep — a gradient rather than a solid bar, so the leading edge has no
+   edge and the tile is lit through rather than wiped */
+.lab-tile::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(100deg,transparent 34%,
+    color-mix(in srgb,var(--ink),transparent 90%) 50%,transparent 66%);
+  transform:translateX(-110%)}
+.lab-tile.is-in::after{animation:labSweep .95s var(--ease-out) .12s both}
+@keyframes labSweep{
+  from{transform:translateX(-110%)}
+  to{transform:translateX(110%)}
+}
+.lab-tile-i{position:relative;width:7px;height:7px;border-radius:50%;flex:none;
+  transition:transform .34s var(--ease-out);
+  background:color-mix(in srgb,var(--ink),transparent 40%)}
+.lab-tile-t{font-family:var(--f-ui);font-size:13.5px;font-weight:500;
+  letter-spacing:-.015em;color:var(--ink)}
+/* the swap: each tile arrives a beat after the one above, so a stage change
+   reads as the panel being repopulated rather than three words blinking */
+.lab-tile:hover .lab-tile-i{transform:scale(1.55)}
+/* THE PING. One ring per dot, expanding and dying — a sonar return, not a
+   throb. It holds at zero for the back half of the cycle so the panel gets a
+   rest between pulses; a ring that restarts the instant it finishes reads as a
+   spinner and stops meaning anything. */
+.lab-tile-i::after{content:"";position:absolute;inset:0;border-radius:50%;
+  border:1px solid var(--ink);
+  /* paused by default and run only while lab.js says the section is near — an
+     infinite animation on an off-screen element is the compositor ticking for
+     nobody, and there are three of them */
+  animation:labPing 2.4s cubic-bezier(.16,1,.3,1) infinite paused}
+.lab.is-near .lab-tile-i::after{animation-play-state:running}
+.lab-tile:nth-child(2) .lab-tile-i::after{animation-delay:.8s}
+.lab-tile:nth-child(3) .lab-tile-i::after{animation-delay:1.6s}
+@keyframes labPing{
+  0%{transform:scale(1);opacity:.5}
+  55%,100%{transform:scale(3.9);opacity:0}
+}
+
+/* Arrival: the row rises, AND its word rises inside it a beat later. Two
+   travels at different rates is what separates a row appearing from a row
+   being written — the same reason the hero runs its type and its mark on
+   different curves. */
+.lab-tile.is-in{animation:labIn .5s var(--ease-out) both}
+.lab-tile:nth-child(2).is-in{animation-delay:.06s}
+.lab-tile:nth-child(3).is-in{animation-delay:.12s}
+.lab-tile.is-in .lab-tile-t{animation:labWord .62s var(--ease-out) .1s both}
+.lab-tile:nth-child(2).is-in .lab-tile-t{animation-delay:.16s}
+.lab-tile:nth-child(3).is-in .lab-tile-t{animation-delay:.22s}
+@keyframes labIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+@keyframes labWord{from{opacity:0;transform:translateY(11px)}to{opacity:1;transform:none}}
+
+/* THE TIMELINE — a scrub strip, not a loading bar.
+
+   --p is written by lab.js and is the only number here: the fill scales by it,
+   the playhead is positioned by it, and lab.js compares each key's index
+   against it. One value, three readers, nothing to keep in sync.
+
+   The keys sit at i/(n-1), so the first is ON the left end and the last is ON
+   the right end rather than inset. A keyframe at zero and a keyframe at the
+   finish is how a real timeline is marked, and it makes the strip's ends mean
+   something instead of being padding. */
+.lab-time{position:relative;height:26px;--p:0}
+.lab-time-rail,.lab-time-fill{position:absolute;left:0;right:0;top:50%;height:1px;
+  margin-top:-.5px;border-radius:1px}
+.lab-time-rail{background:color-mix(in srgb,var(--ink),transparent 86%)}
+.lab-time-fill{background:var(--ink);
+  transform-origin:0 50%;transform:scaleX(var(--p))}
+/* a diamond, because a keyframe is a diamond in every tool that has one */
+.lab-key{position:absolute;left:var(--at);top:50%;width:7px;height:7px;
+  translate:-50% -50%;rotate:45deg;
+  background:var(--bg);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ink),transparent 62%);
+  transition:background .3s var(--ease-out),box-shadow .3s var(--ease-out),
+             scale .3s var(--spring)}
+.lab-key.is-past{background:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.lab-key.is-on{scale:1.5}
+/* the playhead: a hairline through the strip with a cap on the track — the two
+   marks a scrubber gets, and no more */
+.lab-play{position:absolute;left:calc(var(--p) * 100%);top:0;bottom:0;width:1px;
+  translate:-50% 0;background:color-mix(in srgb,var(--ink),transparent 55%)}
+.lab-play::after{content:"";position:absolute;left:50%;top:50%;
+  width:9px;height:9px;translate:-50% -50%;border-radius:50%;
+  background:var(--bg);box-shadow:inset 0 0 0 2px var(--ink)}
+
+.lab-time-read{display:flex;align-items:baseline;gap:2px;margin:9px 0 0;
+  font-family:var(--f-ui);font-size:11px;font-weight:600;letter-spacing:.08em;
+  color:var(--ink);font-variant-numeric:tabular-nums}
+.lab-time-of{color:var(--muted-2)}
+.lab-time-pct{margin-left:auto;color:var(--muted-2);font-weight:500}
+
+@media (max-width:1000px){
+  .lab{height:520vh}
+  .lab-pin{grid-template-columns:1fr;grid-template-rows:auto 1fr auto;
+    gap:14px;padding:12vh var(--pad) 8vh;align-items:start}
+  .lab-forms{margin-bottom:18px}
+  .lab-tools{flex-direction:row;flex-wrap:wrap;gap:6px}
+  .lab-tool{padding:7px 10px}
+  .lab-tool-h{font-size:13px}
+  .lab-tiles{flex-direction:row;flex-wrap:wrap;margin-bottom:18px}
+  .lab-wire{width:min(74%,320px)}
+}
+@media (prefers-reduced-motion:reduce){
+  .lab{height:auto;min-height:100vh}
+  .lab-pin{position:relative;height:auto;min-height:100vh}
+  .lab-tile.is-in,.lab-tile.is-in::after,.lab-tile.is-in .lab-tile-t{animation:none}
+  .lab-tile-i::after{animation:none;opacity:0}
 }

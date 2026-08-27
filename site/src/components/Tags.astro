@@ -1,0 +1,93 @@
+---
+/* The pile of draggable tags — act two of section three.
+
+   Mechanic cloned from draggable-tags.framer.website; the measurements (1:1
+   drag, no momentum, scale 1.04 while held, permanent bring-to-front, the
+   overshooting spring entrance) are in
+   docs/research/components/draggable-tags.spec.md.
+
+   The ASSET is deliberately not cloned. The original is a flat fill with one 2px
+   white strip along the top, and six saturated hues that read as an agency
+   rainbow. Three things changed:
+
+     material  a vertical gradient, a hairline rim, an inset floor shadow for
+               thickness, and a two-layer drop shadow — one tight contact shadow
+               and one wide ambient one. The pair is what makes an object look
+               like it is RESTING on the page rather than pasted onto it; a
+               single mid-blur shadow always reads as a sticker.
+     palette   one cool-leaning muted family at matched lightness, so six tags
+               separate without any of them shouting. Ink is a deep version of
+               each tag's own hue, never black — that is the one rule the
+               original gets right and it is why its tags read as dyed material.
+     copy      Himalay's practice, in the order section two's sentence claims it:
+               research finds the problem, craft makes the answer obvious.
+
+   The icons are inline SVG on a single 1.6 stroke. The original sets unicode
+   dingbats (✦ ✎ ◆ ◎ ◇ ↗), which render at a different weight and baseline on
+   every platform — a real bug on an object this size, not a preference. */
+
+/* dx/dy are the rest offset from the pin's centre, rot the resting angle, and
+   fx/fy where the tag springs in FROM.
+
+   TWO CLUSTERS, NOT ONE PILE. The tags used to fan around the middle, which is
+   now where the brand stickers live. Splitting them three to the top edge and
+   three to the bottom turns them from the subject into a frame — the eye lands
+   on the logos, and the tags say what was brought to them without competing.
+
+   They still overlap inside each cluster, so the pile still reads as a pile and
+   is still worth dragging apart.
+
+   The top cluster is held clear of the floating nav (which occupies y 8..60).
+   At the first spacing the middle tag sat at y 47 and ran straight under the
+   nav pill. */
+const TAGS = [
+  /* top edge */
+  { id:'research',  label:'user research',      bg:'#7C86C4', ink:'#2A3068',
+    dx:-250, dy:-252, rot:-6, fx: 340, fy:-230 },
+  { id:'ixd',       label:'interaction design', bg:'#5FA6A0', ink:'#1C4A46',
+    dx:  36, dy:-288, rot: 5, fx:-300, fy:-260 },
+  { id:'systems',   label:'design systems',     bg:'#6E93C8', ink:'#243E68',
+    dx: 268, dy:-238, rot:-4, fx: 380, fy:-200 },
+  /* bottom edge */
+  { id:'prototype', label:'prototyping',        bg:'#D2A96B', ink:'#674313',
+    dx:-256, dy: 306, rot: 5, fx:-360, fy: 240 },
+  { id:'testing',   label:'usability testing',  bg:'#C88A86', ink:'#682B27',
+    dx:  14, dy: 346, rot:-5, fx: 300, fy: 270 },
+  { id:'craft',     label:'interface craft',    bg:'#85A97C', ink:'#2F4C29',
+    dx: 258, dy: 300, rot: 4, fx:-300, fy: 220 },
+];
+
+/* one stroke weight, one grid, six marks */
+const ICONS = {
+  research:  '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.4 15.4 21 21"/>',
+  ixd:       '<path d="M5 3.5 18.5 11 12.6 12.8 10.4 18.5z"/>',
+  systems:   '<rect x="3.5" y="3.5" width="7.5" height="7.5" rx="1.6"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="1.6"/><rect x="3.5" y="13" width="7.5" height="7.5" rx="1.6"/><rect x="13" y="13" width="7.5" height="7.5" rx="1.6"/>',
+  prototype: '<rect x="2.8" y="3" width="8" height="6" rx="1.6"/><rect x="13.2" y="15" width="8" height="6" rx="1.6"/><path d="M10.8 6h4.6a2 2 0 0 1 2 2v7"/>',
+  testing:   '<path d="M1.8 12S5.6 5 12 5s10.2 7 10.2 7-3.8 7-10.2 7S1.8 12 1.8 12Z"/><circle cx="12" cy="12" r="2.9"/>',
+  craft:     '<path d="M12 2.6 4.4 19.2 12 16l7.6 3.2z"/><path d="M12 16V8.4"/>',
+};
+---
+<div class="tags" data-tags aria-label="What I do">
+  {TAGS.map((t, i) => (
+    <div
+      class="tag"
+      data-tag
+      data-rot={t.rot}
+      data-dx={t.dx}
+      data-dy={t.dy}
+      data-fx={t.fx}
+      data-fy={t.fy}
+      style={`--bg:${t.bg};--ink:${t.ink};z-index:${i + 1}`}
+    >
+      <div class="tag-face">
+        <span class="tag-gloss" aria-hidden="true"></span>
+        <span class="tag-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
+               set:html={ICONS[t.id]} />
+        </span>
+        <span class="tag-lbl">{t.label}</span>
+      </div>
+    </div>
+  ))}
+</div>

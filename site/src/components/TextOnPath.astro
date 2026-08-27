@@ -16,9 +16,24 @@
 
    The element is empty on purpose — the script measures every glyph and writes
    the SVG. The paragraph below it is what a reader without JS gets: the same
-   sentence, flat and legible. */
+   sentence, flat and legible — and it is the copy a crawler reads, since the
+   script only swaps it out once JS runs.
+
+   The sentence itself is the positioning claim, not a mood line: this is the
+   first thing after the hero, so it has to say what the work actually is —
+   user research and interface craft, in that order, from one pair of hands.
+   Two beats to match the curve's rise and fall, and ~100 characters because
+   the layout justifies by stretching word gaps only (see text-on-path.js);
+   much longer and the tail runs off the end of the path.
+
+   The pivot between the two clauses is an asterisk, set as a plain character in
+   the run — not the drawn mark this once carried. That version built the glyph
+   itself (three bars at 60 degrees, its own reveal turn, later a raymarched
+   glass pass) and it is gone on purpose: the beat only ever needed to be a
+   typographic one, and a real '*' gets measured, spaced and revealed by exactly
+   the same code as every other glyph on the curve. */
 const TEXT =
-  'The fastest line is never straight, every curve earns its place, and the finish only proves the path.';
+  'User research finds the real problem * interface craft makes the answer obvious. I do both, in order.';
 
 /* Authored in a 1600x900 space and overshooting both edges (x runs -20 to 1620)
    so the line still reads edge to edge once the viewBox is sliced to the
