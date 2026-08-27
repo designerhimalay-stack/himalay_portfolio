@@ -226,23 +226,35 @@
   document.addEventListener('pointerleave', function(){ tx = 0; ty = 0; });
   addEventListener('blur', function(){ tx = 0; ty = 0; });
 
-  /* THE CANVAS BOX, CACHED.
+  /* THE CANVAS BOX, CACHED — AND INVALIDATED BY THE THING THAT MOVES IT.
 
      draw() read cv.getBoundingClientRect() on every rendered frame. That is a
-     layout read inside the render loop, and this loop runs AFTER the scroll
-     handlers that write --par, the ring's transform and the wireframe's
-     attributes — so it flushed all of their pending layout, every frame, to get
-     a box that had not moved.
+     layout read inside the render loop, and this loop runs AFTER the handlers
+     that write --par, the ring's transform and the wireframe's attributes, so
+     it flushed all of their pending layout every frame to fetch a box that had
+     usually not moved.
 
-     Refreshed from a passive scroll listener instead, which fires BEFORE the
-     frame's writes, when layout is already clean from the previous one. The
-     cost is that the box is one frame stale while --par is actually changing —
-     which is the hero, where dialMix is 0 and the box is not consulted at all.
-     Everywhere the recolour is live the canvas is parked and the cache exact. */
-  var box = null;
-  function remeasure(){ box = cv.getBoundingClientRect(); }
-  addEventListener('scroll', remeasure, { passive: true });
-  addEventListener('resize', remeasure, { passive: true });
+     Caching it off a scroll listener was the first attempt and it was WRONG in
+     a way that took a screenshot to catch. #hashgl is position:fixed, so scroll
+     does not move it at all — only its transform does, and --par is written in
+     a rAF that runs AFTER the scroll event. Scroll continuously and the cache is
+     one frame behind, which is invisible. But JUMP into the section — a reload
+     mid-page, an anchor, the last frame of a fling — and the final --par write
+     has no scroll event behind it, so the stale box never refreshed. The
+     recolour circle stayed 345px above where it belonged and the bottom of the
+     hash fell outside it: two blue legs on an otherwise clear glass object,
+     which reproduced every time and never while scrolling in.
+
+     The trigger is now the transform itself, read as an inline string. That is
+     a style read, not a layout read, so it costs nothing, and it is exact: the
+     box can only move when one of those two values does, or on resize. */
+  var box = null, lastPose = '';
+  function boxNow(){
+    var pose = cv.style.getPropertyValue('--par') + '|' + cv.style.getPropertyValue('--hx');
+    if (!box || pose !== lastPose) { lastPose = pose; box = cv.getBoundingClientRect(); }
+    return box;
+  }
+  addEventListener('resize', function(){ box = null; }, { passive: true });
 
   function size(){
     var dpr = Math.min(devicePixelRatio||1, dprCap);     // cap: raymarching is fill-rate bound
@@ -278,12 +290,17 @@
        landed in the wrong place and only the part of the hash that happened to
        fall inside it recoloured — the whole object should have. Subtract the
        canvas's own origin first, then flip y, then scale by dpr. */
-    if (!box) remeasure();
-    var _d = box.width ? (cv.width / box.width) : 1;
-    gl.uniform3f(uD,
-      (dialX - box.left) * _d,
-      (box.height - (dialY - box.top)) * _d,
-      dialR * _d);
+    /* Only measured while the recolour is actually live. With DMIX at 0 the
+       shader multiplies this circle away entirely, so outside the dial section
+       — which is most of the page — the box is never touched at all. */
+    if (dialMix > 0) {
+      var _b = boxNow();
+      var _d = _b.width ? (cv.width / _b.width) : 1;
+      gl.uniform3f(uD,
+        (dialX - _b.left) * _d,
+        (_b.height - (dialY - _b.top)) * _d,
+        dialR * _d);
+    }
     gl.uniform1f(uDM, dialMix);
     gl.uniform3f(uTN, TINT[0], TINT[1], TINT[2]);
     gl.drawArrays(gl.TRIANGLES, 0, 3);

@@ -1,3 +1,46 @@
+/* ============ the face, self-hosted ============
+   Instrument Sans came off the Google Fonts CDN behind two preconnects and a
+   render-blocking stylesheet. That is a third party in the critical path of a
+   page whose first frame is a loader setting one word in this exact face — and
+   it failed once during testing (ERR_CONNECTION_RESET), which drops the whole
+   site onto -apple-system. Nothing here needs to be fetched from someone else.
+
+   TWO FILES, NOT EIGHT. It is a VARIABLE font: the CDN's css2 response lists
+   400/500/600/700 as separate @font-face blocks, but every one of them points
+   at the same URL per subset. So one declaration per unicode subset with a
+   400-700 range covers every weight the site uses, and the browser
+   interpolates rather than downloading four masters. 29K + 11K total.
+
+   The latin-ext file is declared but almost never fetched: unicode-range gates
+   the download, and everything on this page — the em dash, the curly
+   apostrophe, the degree sign — lives inside the latin subset. It is here so a
+   stray glyph degrades to a download rather than to a fallback face.
+
+   swap, not block: the arrival choreography starts at 240ms and the type has to
+   be on screen for it, even if the first frames are set in the fallback. */
+@font-face{
+  font-family:"Instrument Sans";
+  font-style:normal;
+  font-weight:400 700;
+  font-stretch:100%;
+  font-display:swap;
+  src:url("/assets/fonts/instrument-sans-latin.woff2") format("woff2");
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,
+    U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,
+    U+FEFF,U+FFFD;
+}
+@font-face{
+  font-family:"Instrument Sans";
+  font-style:normal;
+  font-weight:400 700;
+  font-stretch:100%;
+  font-display:swap;
+  src:url("/assets/fonts/instrument-sans-latin-ext.woff2") format("woff2");
+  unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,
+    U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,
+    U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+
 /* ============ tokens (measured from source) ============ */
 :root{
   --bg:#F6F6F9; --ink:#131316; --muted:#70728F; --muted-2:#9193AC;
@@ -57,10 +100,31 @@ h1{margin:0}
    swap is one declaration either way if it ever comes up again. */
 .dotted{--dot:#131316}
 .d1 .ln-i{
-  /* the reference screens at 3px, but its type is 168px against our 107px, so
-     matching that grid clogs the glyphs. 3.5px keeps the gaps open at our size. */
-  background-image:radial-gradient(var(--dot) .9px, transparent 1.05px);
-  background-size:3.5px 3.5px;
+  /* THE GRID SCALES WITH THE TYPE, BETWEEN TWO FIXED ENDS.
+
+     The reference screens at 3px, but its type is 168px against our 107px, so
+     matching that grid clogs the glyphs — 3.5px keeps the gaps open at display
+     size, and that is what the em value resolves to there.
+
+     It was a flat 3.5px, and that made the effect a RATIO rather than a texture:
+     at 116px a stem is ~13px and catches four dots across, at the phone's 29px
+     it is ~3px and catches one. The name rendered as a dashed outline of itself
+     on mobile — legible as a shape, unreadable as a word.
+
+     clamp keeps both ends honest, and the em is tuned off the size the headline
+     ACTUALLY renders at rather than off its ceiling: 7.4vw is 106.56px on a
+     1440 window, so .03285em resolves there to exactly the 3.5px this always
+     used. First attempt tuned against the 132px cap instead and quietly made
+     desktop 8% denser than it had been — a change nobody asked for, on the one
+     screen the effect was already right on.
+
+     Above 1784px the vw arm hits its 132px cap, the em would ask for 4.34 and
+     the upper bound holds it at 3.5. Below, it falls until the 2.15px floor
+     takes over — the tightest grid that still reads as dots rather than as
+     grey, and what governs on a phone. */
+  background-image:radial-gradient(var(--dot) clamp(.62px,.00845em,.9px),
+                                   transparent clamp(.74px,.00985em,1.05px));
+  background-size:clamp(2.15px,.03285em,3.5px) clamp(2.15px,.03285em,3.5px);
   /* the dots are painted in the background box, and background-clip:text can
      only reveal ink that the box already covers. line-height .9 makes that box
      SHORTER than the type: Instrument Sans is 970/-250 per 1000, so its content

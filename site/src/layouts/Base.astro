@@ -23,9 +23,19 @@ const { title, description } = Astro.props;
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>{title}</title>
   <meta name="description" content={description} />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" />
+  <!-- Instrument Sans is served from /assets/fonts now; the @font-face pair is
+       in global.css. The CDN link and its two preconnects that used to sit here
+       put a third party in the critical path of a page whose first frame is a
+       loader setting one word in this face — and it did fail once in testing.
+
+       Preloaded rather than merely declared: a font referenced from a
+       stylesheet is not discovered until the CSS has parsed and layout has
+       found something that needs it, which is two round trips too late for
+       type that animates in at 240ms. Only the latin file, because unicode-range
+       means latin-ext is almost never fetched and preloading it would be
+       a guaranteed download of a file usually nobody needs. -->
+  <link rel="preload" href="/assets/fonts/instrument-sans-latin.woff2"
+        as="font" type="font/woff2" crossorigin />
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png" />
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
